@@ -3,12 +3,10 @@ name: Terraform CI/CD
 on:
   push:
     branches:
-      - dev
-      - prod
+      - main
   pull_request:
     branches:
-      - dev
-      - prod
+      - main
 
 jobs:
   terraform:
@@ -21,20 +19,8 @@ jobs:
       - name: Set environment directory
         id: envdir
         run: |
-          case "${GITHUB_REF##*/}" in
-            dev)
-              echo "dir=terraform/dev" >> $GITHUB_OUTPUT
-              echo "apply=false" >> $GITHUB_OUTPUT
-              ;;
-            prod)
-              echo "dir=terraform/prod" >> $GITHUB_OUTPUT
-              echo "apply=false" >> $GITHUB_OUTPUT  # Set to false initially
-              ;;
-            *)
-              echo "Branch no válida para deploy"
-              exit 1
-              ;;
-          esac
+          echo "dir=terraform/environments/dev" >> $GITHUB_OUTPUT  # Directorio 'dev' de Terraform
+          echo "apply=false" >> $GITHUB_OUTPUT  # Inicialmente 'false' para el apply
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -60,7 +46,7 @@ jobs:
   manual-apply:
     needs: terraform
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && steps.envdir.outputs.apply == 'false' && github.ref == 'refs/heads/prod'
+    if: github.event_name == 'push' && steps.envdir.outputs.apply == 'false' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Wait for manual approval

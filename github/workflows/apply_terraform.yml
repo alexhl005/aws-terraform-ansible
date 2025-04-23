@@ -1,7 +1,7 @@
 name: Apply Terraform Changes
 
 on:
-  workflow_dispatch:  # Esta acción permite ejecutar el workflow manualmente desde la UI
+  workflow_dispatch:  # Acción manual para ejecutar este workflow
 
 jobs:
   apply:
@@ -14,7 +14,7 @@ jobs:
       - name: Set environment directory
         id: envdir
         run: |
-          echo "dir=terraform/prod" >> $GITHUB_OUTPUT  # Usar el directorio prod para aplicar
+          echo "dir=terraform/environments/dev" >> $GITHUB_OUTPUT  # Directorio 'dev' para el apply
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
