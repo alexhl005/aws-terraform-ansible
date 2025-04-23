@@ -25,9 +25,9 @@ module "vpc" {
 
   environment               = "dev"
   vpc_cidr                  = "10.0.0.0/16"
-  dmz_subnet_cidr          = "10.0.1.0/24"
-  private_ec2_subnet_cidr  = "10.0.2.0/24"
-  private_rds_subnet_cidr  = "10.0.3.0/24"
+  dmz_subnet_cidr           = "10.0.1.0/24"
+  private_ec2_subnet_cidr   = "10.0.2.0/24"
+  private_rds_subnet_cidr   = "10.0.3.0/24"
   azs                       = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
 
@@ -36,7 +36,7 @@ module "ec2" {
 
   environment        = "dev"
   vpc_id             = module.vpc.vpc_id
-  subnet_ids         = module.vpc.private_subnet_ids
+  subnet_ids         = module.vpc.private_ec2_subnet_ids
   ami_id             = "ami-0f9de6e2d2f067fca"  # Ubuntu 22.04
   instance_type      = "t2.micro"
   instance_count     = 3
@@ -49,7 +49,7 @@ module "rds" {
 
   environment          = "dev"
   vpc_id               = module.vpc.vpc_id
-  private_subnet_ids   = module.vpc.private_subnet_ids
+  private_subnet_ids   = module.vpc.private_rds_subnet_ids
   db_username          = "admin_dev"
   db_password          = "Root1234$"
   instance_class       = "db.c6gd.medium"
@@ -62,7 +62,7 @@ module "elb" {
   
   environment         = "dev"
   vpc_id              = module.vpc.vpc_id
-  public_subnet_ids          = module.vpc.dmz_subnet_cidr
+  public_subnet_ids   = module.vpc.dmz_subnet_ids
   certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123"
 }
 
