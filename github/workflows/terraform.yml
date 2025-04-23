@@ -1,0 +1,63 @@
+name: Terraform CI/CD
+
+on:
+  push:
+    branches:
+      - dev
+      - prod
+  pull_request:
+    branches:
+      - dev
+      - prod
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set environment directory
+        id: envdir
+        run: |
+          case "${GITHUB_REF##*/}" in
+            dev)
+              echo "dir=terraform/dev" >> $GITHUB_OUTPUT
+              echo "apply=false" >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              echo "dir=terraform/prod" >> $GITHUB_OUTPUT
+              echo "apply=true" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "Branch no válida para deploy"
+              exit 1
+              ;;
+          esac
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ steps.envdir.outputs.dir }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: ${{ steps.envdir.outputs.dir }}
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ${{ steps.envdir.outputs.dir }}
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ${{ steps.envdir.outputs.dir }}
+
+      - name: Terraform Apply (only on prod)
+        if: steps.envdir.outputs.apply == 'true' && github.event_name == 'push'
+        run: terraform apply -auto-approve
+        working-directory: ${{ steps.envdir.outputs.dir }}
