@@ -1,5 +1,5 @@
 output "instance_ids" {
-  value = aws_instance.app[*].id
+  value = aws_instance.web[*].id
 }
 
 output "security_group_id" {
