@@ -41,7 +41,7 @@ module "ec2" {
   instance_type      = "t2.micro"
   instance_count     = 3
   ssh_allowed_cidrs  = ["10.0.0.0/16"]
-  key_name = "vockey"
+  key_name           = "vockey"
 }
 
 module "rds" {
@@ -62,7 +62,7 @@ module "elb" {
   
   environment         = "dev"
   vpc_id              = module.vpc.vpc_id
-  subnet_ids          = module.vpc.public_subnet_ids
+  public_subnet_ids          = module.vpc.dmz_subnet_cidrs
   certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123"
 }
 
