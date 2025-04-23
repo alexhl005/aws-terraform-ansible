@@ -1,6 +1,6 @@
 resource "aws_rds_cluster" "main" {
   cluster_identifier      = "${var.environment}-ecommerce-cluster"
-  engine                  = "PostgreSQL"
+  engine                  = "postgres"
   engine_version          = "PostgreSQL 17.2-R2"
   database_name           = var.db_name
   master_username         = var.db_username
