@@ -42,8 +42,7 @@ variable "multi_az" {
   default     = true
 }
 
-variable "allowed_cidr_blocks" {
-  description = "CIDRs permitidos para acceder a RDS"
-  type        = list(string)
-  default     = ["10.0.0.0/16"]
+variable "ec2_security_group_id" {
+  description = "ID del security group de EC2 que puede acceder al RDS"
+  type        = string
 }

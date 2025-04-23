@@ -54,7 +54,7 @@ module "rds" {
   db_password          = "Root1234$"
   instance_class       = "db.c6gd.medium"
   multi_az             = true
-  allowed_cidr_blocks  = module.vpc.private_subnet_ids
+  ec2_security_group_id = aws_security_group.ec2.id
 }
 
 module "elb" {
