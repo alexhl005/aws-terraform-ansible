@@ -28,7 +28,7 @@ jobs:
               ;;
             prod)
               echo "dir=terraform/prod" >> $GITHUB_OUTPUT
-              echo "apply=true" >> $GITHUB_OUTPUT
+              echo "apply=false" >> $GITHUB_OUTPUT  # Set to false initially
               ;;
             *)
               echo "Branch no válida para deploy"
@@ -57,7 +57,13 @@ jobs:
         run: terraform plan
         working-directory: ${{ steps.envdir.outputs.dir }}
 
-      - name: Terraform Apply (only on prod)
-        if: steps.envdir.outputs.apply == 'true' && github.event_name == 'push'
-        run: terraform apply -auto-approve
-        working-directory: ${{ steps.envdir.outputs.dir }}
+  manual-apply:
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && steps.envdir.outputs.apply == 'false' && github.ref == 'refs/heads/prod'
+
+    steps:
+      - name: Wait for manual approval
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          workflow: apply-terraform.yml  # Trigger another workflow for apply

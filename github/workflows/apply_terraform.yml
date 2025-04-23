@@ -1,0 +1,30 @@
+name: Apply Terraform Changes
+
+on:
+  workflow_dispatch:  # Esta acción permite ejecutar el workflow manualmente desde la UI
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set environment directory
+        id: envdir
+        run: |
+          echo "dir=terraform/prod" >> $GITHUB_OUTPUT  # Usar el directorio prod para aplicar
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ steps.envdir.outputs.dir }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ${{ steps.envdir.outputs.dir }}

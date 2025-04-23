@@ -1,7 +1,7 @@
 resource "aws_rds_cluster" "main" {
   cluster_identifier      = "${var.environment}-ecommerce-cluster"
-  engine                  = "aurora-mysql"
-  engine_version          = "5.7.mysql_aurora.2.11.2"
+  engine                  = "PostgreSQL"
+  engine_version          = "PostgreSQL 17.2-R2"
   database_name           = var.db_name
   master_username         = var.db_username
   master_password         = var.db_password
@@ -28,13 +28,22 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "aws_security_group" "rds" {
-  vpc_id = var.vpc_id
-  name   = "${var.environment}-rds-sg"
+  vpc_id      = var.vpc_id
+  name        = "${var.environment}-rds-sg"
+  description = "Allow PostgreSQL access from EC2 instances only"
 
   ingress {
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
+    description              = "PostgreSQL access from EC2 instances"
+    from_port                = 5432
+    to_port                  = 5432
+    protocol                 = "tcp"
+    security_groups          = [aws_security_group.ec2.id]  # Asegura que solo EC2 con este SG puedan conectarse
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
