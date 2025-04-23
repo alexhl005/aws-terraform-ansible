@@ -37,7 +37,7 @@ resource "aws_security_group" "rds" {
     from_port                = 5432
     to_port                  = 5432
     protocol                 = "tcp"
-    security_groups          = [aws_security_group.ec2.id]  # Asegura que solo EC2 con este SG puedan conectarse
+    security_groups          = [aws_security_group.ec2.name]  # Asegura que solo EC2 con este SG puedan conectarse
   }
 
   egress {

@@ -8,19 +8,19 @@ variable "vpc_cidr" {
   type        = string
 }
 
-variable "dmz_subnet_cidrs" {
-  description = "Lista de CIDRs para subredes públicas"
-  type        = list(string)
+variable "dmz_subnet_cidr" {
+  description = "CIDR para subredes públicas"
+  type        = string
 }
 
-variable "private_ec2_subnet_cidrs" {
-  description = "Lista de CIDRs para subredes privadas"
-  type        = list(string)
+variable "private_ec2_subnet_cidr" {
+  description = "CIDR para subredes privadas EC2s"
+  type        = string
 }
 
-variable "private_rds_subnet_cidrs" {
-  description = "Lista de CIDRs para subredes privadas"
-  type        = list(string)
+variable "private_rds_subnet_cidr" {
+  description = "CIDR para subredes privadas RDSs"
+  type        = string
 }
 
 variable "azs" {

@@ -8,9 +8,9 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "public" {
-  count                   = length(var.dmz_subnet_cidrs)
+  count                   = length(var.dmz_subnet_cidr)
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.dmz_subnet_cidrs[count.index]
+  cidr_block              = var.dmz_subnet_cidr[count.index]
   availability_zone       = var.azs[count.index]
   map_public_ip_on_launch = true
   tags = {
@@ -19,9 +19,9 @@ resource "aws_subnet" "public" {
 }
 
 resource "aws_subnet" "private_ec2" {
-  count             = length(var.private_ec2_subnet_cidrs)
+  count             = length(var.private_ec2_subnet_cidr)
   vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_ec2_subnet_cidrs[count.index]
+  cidr_block        = var.private_ec2_subnet_cidr[count.index]
   availability_zone = var.azs[count.index]
   tags = {
     Name = "${var.environment}-private-${count.index}"
@@ -29,9 +29,9 @@ resource "aws_subnet" "private_ec2" {
 }
 
 resource "aws_subnet" "private_rds" {
-  count             = length(var.private_rds_subnet_cidrs)
+  count             = length(var.private_rds_subnet_cidr)
   vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_rds_subnet_cidrs[count.index]
+  cidr_block        = var.private_rds_subnet_cidr[count.index]
   availability_zone = var.azs[count.index]
   tags = {
     Name = "${var.environment}-private-${count.index}"

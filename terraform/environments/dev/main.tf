@@ -25,9 +25,9 @@ module "vpc" {
 
   environment               = "dev"
   vpc_cidr                  = "10.0.0.0/16"
-  dmz_subnet_cidrs          = "10.0.1.0/24"
-  private_ec2_subnet_cidrs  = "10.0.2.0/24"
-  private_rds_subnet_cidrs  = "10.0.3.0/24"
+  dmz_subnet_cidr          = "10.0.1.0/24"
+  private_ec2_subnet_cidr  = "10.0.2.0/24"
+  private_rds_subnet_cidr  = "10.0.3.0/24"
   azs                       = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
 
@@ -62,7 +62,7 @@ module "elb" {
   
   environment         = "dev"
   vpc_id              = module.vpc.vpc_id
-  public_subnet_ids          = module.vpc.dmz_subnet_cidrs
+  public_subnet_ids          = module.vpc.dmz_subnet_cidr
   certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123"
 }
 
