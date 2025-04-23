@@ -1,0 +1,24 @@
+---
+- name: Install Apache
+  apt:
+    name: apache2
+    state: latest
+    update_cache: yes
+
+- name: Enable Apache modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - rewrite
+    - ssl
+
+- name: Copy SSL certificates
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: "files/ssl/yourdomain.crt", dest: "/etc/ssl/certs/yourdomain.crt" }
+    - { src: "files/ssl/yourdomain.key", dest: "/etc/ssl/private/yourdomain.key" }
+  notify: restart apache

@@ -1,0 +1,6 @@
+---
+- name: Deploy WordPress on Apache
+  hosts: webservers
+  become: yes
+  roles:
+    - wordpress

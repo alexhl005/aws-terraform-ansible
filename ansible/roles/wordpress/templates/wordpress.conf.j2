@@ -1,0 +1,21 @@
+<VirtualHost *:80>
+    ServerName {{ apache_vhost_name }}
+    Redirect permanent / https://{{ apache_vhost_name }}/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName {{ apache_vhost_name }}
+    DocumentRoot /var/www/wordpress
+
+    SSLEngine on
+    SSLCertificateFile {{ apache_ssl_cert }}
+    SSLCertificateKeyFile {{ apache_ssl_key }}
+
+    <Directory /var/www/wordpress>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/wordpress_error.log
+    CustomLog ${APACHE_LOG_DIR}/wordpress_access.log combined
+</VirtualHost>
