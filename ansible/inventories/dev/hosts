@@ -1,6 +1,7 @@
 [webservers]
-web1.example.com
-web2.example.com
+10.0.2.1
+10.0.2.2
+10.0.2.3
 
 [webservers:vars]
 ansible_user=ubuntu

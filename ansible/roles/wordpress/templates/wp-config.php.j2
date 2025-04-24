@@ -2,7 +2,7 @@
 define('DB_NAME', '{{ mysql_db_name }}');
 define('DB_USER', '{{ mysql_db_user }}');
 define('DB_PASSWORD', '{{ mysql_db_password }}');
-define('DB_HOST', 'localhost');
+define('DB_HOST', '{% comment %} arn de aws RDS cluster {% endcomment %}');
 define('DB_CHARSET', 'utf8');
 define('DB_COLLATE', '');
 

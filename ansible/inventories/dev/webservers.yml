@@ -3,9 +3,9 @@
 apache_listen_ports:
   - 80
   - 443
-apache_vhost_name: "yourdomain.com"
-apache_ssl_cert: "/etc/ssl/certs/yourdomain.crt"
-apache_ssl_key: "/etc/ssl/private/yourdomain.key"
+apache_vhost_name: "devDomain.com"
+apache_ssl_cert: "/etc/ssl/certs/devDomain.crt"
+apache_ssl_key: "/etc/ssl/private/devDomain.key"
 
 # MySQL Configuration
 mysql_root_password: "secure_root_password"
@@ -15,7 +15,7 @@ mysql_db_password: "secure_db_password"
 
 # WordPress Configuration
 wp_admin_user: "admin"
-wp_admin_password: "secure_wp_password"
-wp_admin_email: "admin@yourdomain.com"
+wp_admin_password: "Root1234$"
+wp_admin_email: "admin@devDomain.com"
 wp_site_title: "My WordPress Site"
-wp_site_url: "https://yourdomain.com"
+wp_site_url: "https://devDomain.com"
