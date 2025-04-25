@@ -1,24 +1,16 @@
 ---
-- name: Install Apache
-  apt:
-    name: apache2
-    state: latest
-    update_cache: yes
+- name: Install System Packages
+  apt: name={{ item }} update_cache=yes state=latest
+  loop: "{{ system_packages }}"
 
-- name: Enable Apache modules
-  apache2_module:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - rewrite
-    - ssl
+- name: Enable rewrite module
+  shell: /usr/sbin/a2enmod {{ item }}
+  loop: [ 'rewrite', 'ssl']
 
-- name: Copy SSL certificates
-  copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: "0644"
-  loop:
-    - { src: "files/ssl/yourdomain.crt", dest: "/etc/ssl/certs/yourdomain.crt" }
-    - { src: "files/ssl/yourdomain.key", dest: "/etc/ssl/private/yourdomain.key" }
+- name: Crear un certificado SSL autofirmado
+  command: >
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/{{ apache_vhost_name }}.key
+    -out /etc/ssl/certs/{{ apache_vhost_name }}.crt
+    -subj "/C={{ C }}/ST={{ ST }}/L={{ L }}/O={{ O }}/OU={{ OU }}/CN={{ CN }}"
+  become: yes
   notify: restart apache

@@ -12,14 +12,9 @@
   notify: restart apache
 
 - name: Enable WordPress site
-  file:
-    src: /etc/apache2/sites-available/wordpress.conf
-    dest: /etc/apache2/sites-enabled/wordpress.conf
-    state: link
+  shell: /usr/sbin/a2ensite wordpress.conf
   notify: restart apache
 
-- name: Disable default site
-  file:
-    path: /etc/apache2/sites-enabled/000-default.conf
-    state: absent
+- name: Disable default Apache site
+  shell: /usr/sbin/a2dissite 000-default.conf
   notify: restart apache

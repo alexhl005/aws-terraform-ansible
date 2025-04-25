@@ -1,8 +1,6 @@
 [webservers]
-10.0.2.1
-10.0.2.2
-10.0.2.3
+192.168.80.200
 
 [webservers:vars]
-ansible_user=ubuntu
-ansible_ssh_private_key_file=~/.ssh/your_key.pem
+ansible_user=user
+ansible_ssh_private_key_file=~/.ssh/ansible_key.pem

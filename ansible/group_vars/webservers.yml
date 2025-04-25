@@ -1,0 +1,32 @@
+---
+#System Configuration
+system_packages: [ 'apache2', 'mysql-server', 'python3-pymysql', 'php', 'php-mysql', 'libapache2-mod-php', 'php-curl', 'php-gd', 'php-mbstring', 'php-xml', 'php-xmlrpc', 'php-soap', 'php-intl', 'php-zip' ]
+
+# Apache Configuration
+apache_listen_ports:
+  - 80
+  - 443
+apache_vhost_name: "devDomain.com"
+apache_ssl_cert: "/etc/ssl/certs/{{ apache_vhost_name }}.crt"
+apache_ssl_key: "/etc/ssl/private/{{ apache_vhost_name }}.key"
+
+# MySQL Configuration
+mysql_root_password: "secure_root_password"
+mysql_db_name: "wordpress"
+mysql_db_user: "wpuser"
+mysql_db_password: "secure_db_password"
+
+# WordPress Configuration
+wp_admin_user: "admin"
+wp_admin_password: "Root1234$"
+wp_admin_email: "admin@devDomain.com"
+wp_site_title: "My WordPress Site"
+wp_site_url: "https://devDomain.com"
+
+#Cert SSL Configuration
+C: "ES"
+ST: "Córdoba"
+L: "Córdoba"
+O: "dev"
+OU: "dev"
+CN: "dev"

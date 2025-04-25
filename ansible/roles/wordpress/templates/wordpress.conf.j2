@@ -1,11 +1,15 @@
 <VirtualHost *:80>
     ServerName {{ apache_vhost_name }}
     Redirect permanent / https://{{ apache_vhost_name }}/
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 
 <VirtualHost *:443>
     ServerName {{ apache_vhost_name }}
     DocumentRoot /var/www/wordpress
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 
     SSLEngine on
     SSLCertificateFile {{ apache_ssl_cert }}
@@ -13,8 +17,13 @@
 
     <Directory /var/www/wordpress>
         AllowOverride All
+        Options -Indexes
         Require all granted
     </Directory>
+
+    <IfModule mod_dir.c>
+        DirectoryIndex index.php index.html index.cgi index.pl  index.xhtml index.htm
+    </IfModule>
 
     ErrorLog ${APACHE_LOG_DIR}/wordpress_error.log
     CustomLog ${APACHE_LOG_DIR}/wordpress_access.log combined

@@ -1,6 +1,7 @@
 ---
-- include: install_apache.yml
-- include: install_mysql.yml
-- include: install_php.yml
-- include: configure_apache.yml
-- include: install_wordpress.yml
+- name: Include all tasks for WordPress installation
+  include_tasks: install_apache.yml
+- name: Include Apache configuration
+  include_tasks: configure_apache.yml
+- name: Include WordPress installation
+  include_tasks: install_wordpress.yml
