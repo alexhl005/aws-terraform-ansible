@@ -8,3 +8,5 @@ cd ansible
 ansible-playbook -i inventories/${ENV}/hosts playbooks/deploy.yml \
   -e "@../tf_outputs/tf_outputs.json" \
   --key-file "${SSH_KEY}"
+
+#test
