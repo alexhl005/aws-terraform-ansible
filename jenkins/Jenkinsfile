@@ -1,0 +1,122 @@
+pipeline {
+    agent any
+    
+    environment {
+        AWS_REGION = "us-east-1"
+        TF_DIR = "terraform/environments/dev"
+        ANSIBLE_DIR = "ansible"
+    }
+
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'GIT_SHA', value: '$.sha'],
+                [key: 'GIT_REF', value: '$.ref']
+            ],
+            token: env.JENKINS_TRIGGER_TOKEN ?: 'terraform-ci'
+        )
+    }
+
+    stages {
+        stage('Prepare Workspace') {
+            steps {
+                checkout scm
+                sh 'mkdir -p tf_outputs'
+            }
+        }
+
+        stage('Download Terraform Plan') {
+            when {
+                triggeredBy 'GenericTrigger'
+            }
+            steps {
+                withCredentials([string(credentialsId: 'GITHUB_TOKEN', variable: 'GITHUB_TOKEN')]) {
+                    sh """
+                    curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    https://api.github.com/repos/${env.GIT_BASE_REPO}/actions/artifacts \
+                    | jq -r '.artifacts[] | select(.name == "tfplan-${env.GIT_SHA}") | .archive_download_url' \
+                    | xargs curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -o tfplan.zip
+                    unzip tfplan.zip -d ${env.TF_DIR}
+                    """
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                script {
+                    timeout(time: 15, unit: 'MINUTES') {
+                        input message: '¿Aplicar los cambios de Terraform?', 
+                              ok: 'Confirmar'
+                    }
+                    
+                    dir(env.TF_DIR) {
+                        sh 'terraform apply -input=false tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Generate Terraform Outputs') {
+            steps {
+                dir(env.TF_DIR) {
+                    sh """
+                    terraform output -json > ../../tf_outputs/tf_outputs.json
+                    """
+                }
+            }
+        }
+
+        stage('Configure Ansible Inventory') {
+            steps {
+                script {
+                    def tfOutputs = readJSON file: 'tf_outputs/tf_outputs.json'
+                    
+                    writeFile file: "${env.ANSIBLE_DIR}/inventories/dev/hosts", 
+                             text: """
+                    [webservers]
+                    ${tfOutputs.ec2_instances.value.join('\n')}
+
+                    [webservers:vars]
+                    ansible_user=ubuntu
+                    ansible_ssh_private_key_file=/opt/keys/aws-key.pem
+                    db_host=${tfOutputs.rds_endpoint.value}
+                    elb_dns=${tfOutputs.elb_dns_name.value}
+                    """
+                }
+            }
+        }
+
+        stage('Ansible Deployment') {
+            steps {
+                dir(env.ANSIBLE_DIR) {
+                    withCredentials([file(credentialsId: 'AWS_SSH_KEY', variable: 'SSH_KEY')]) {
+                        sh """
+                        cp ${SSH_KEY} /opt/keys/aws-key.pem
+                        chmod 600 /opt/keys/aws-key.pem
+                        ansible-playbook -i inventories/dev/hosts playbooks/deploy.yml \
+                          -e "@../tf_outputs/tf_outputs.json"
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'tf_outputs/**'
+            cleanWs()
+        }
+        failure {
+            slackSend channel: '#infra-alerts',
+                      message: "Pipeline fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        }
+        success {
+            slackSend channel: '#infra-notifications',
+                      message: "Despliegue exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        }
+    }
+}

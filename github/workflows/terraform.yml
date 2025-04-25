@@ -7,49 +7,71 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:  # Permite ejecución manual
+
+env:
+  TF_WORKSPACE: "dev"
+  TF_DIR: "terraform/environments/dev"
 
 jobs:
-  terraform:
+  validate:
+    name: Validate Terraform
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Set environment directory
-        id: envdir
-        run: |
-          echo "dir=terraform/environments/dev" >> $GITHUB_OUTPUT  # Directorio 'dev' de Terraform
-          echo "apply=false" >> $GITHUB_OUTPUT  # Inicialmente 'false' para el apply
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.6.6
+          terraform_version: "1.6.6"
+          terraform_wrapper: false
 
       - name: Terraform Init
-        run: terraform init
-        working-directory: ${{ steps.envdir.outputs.dir }}
+        run: terraform init -input=false
+        working-directory: ${{ env.TF_DIR }}
 
-      - name: Terraform Format Check
+      - name: Terraform Format
         run: terraform fmt -check -recursive
-        working-directory: ${{ steps.envdir.outputs.dir }}
+        working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ${{ steps.envdir.outputs.dir }}
+        working-directory: ${{ env.TF_DIR }}
 
-      - name: Terraform Plan
-        run: terraform plan
-        working-directory: ${{ steps.envdir.outputs.dir }}
-
-  manual-apply:
-    needs: terraform
+  plan:
+    name: Terraform Plan
+    needs: validate
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && steps.envdir.outputs.apply == 'false' && github.ref == 'refs/heads/main'
-
+    
     steps:
-      - name: Wait for manual approval
-        uses: peter-evans/workflow-dispatch@v1
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Generate Plan
+        run: terraform plan -out=tfplan
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v3
         with:
-          workflow: apply-terraform.yml  # Trigger another workflow for apply
+          name: tfplan-${{ github.sha }}
+          path: ${{ env.TF_DIR }}/tfplan
+
+  notify:
+    name: Notify Jenkins
+    needs: plan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Jenkins
+        uses: machine-learning-apps/trigger-jenkins@master
+        with:
+          url: "http://your-jenkins-url/generic-webhook-trigger/invoke"
+          token: "${{ secrets.JENKINS_TRIGGER_TOKEN }}"
+          parameters: '{"sha":"${{ github.sha }}", "ref":"${{ github.ref }}"}'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
