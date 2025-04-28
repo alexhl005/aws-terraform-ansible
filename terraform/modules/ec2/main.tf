@@ -1,16 +1,16 @@
 # Generar clave SSH para conexión
-resource "tls_private_key" "this" {
+resource "tls_private_key" "key_pars" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-resource "aws_key_pair" "this" {
+resource "aws_key_pair" "key_pars" {
   key_name   = "${var.environment}-wp-key"
-  public_key = tls_private_key.this.public_key_openssh
+  public_key = tls_private_key.key_pars.public_key_openssh
 }
 
 resource "local_file" "private_key" {
-  content  = tls_private_key.this.private_key_pem
+  content  = tls_private_key.key_pars.private_key_pem
   filename = "${path.module}/.ssh/${var.environment}-wp-key.pem"
   file_permission = "0600"
 }
@@ -23,7 +23,7 @@ resource "aws_instance" "web" {
   subnet_id     = element(var.subnet_ids, count.index)
   vpc_security_group_ids = [aws_security_group.ec2.id]
   associate_public_ip_address = false
-  key_name      = aws_key_pair.this.key_name
+  key_name      = aws_key_pair.key_pars.key_name
 
   # Configuración inicial
   user_data = <<-EOF
@@ -38,7 +38,7 @@ resource "aws_instance" "web" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = tls_private_key.this.private_key_pem
+    private_key = tls_private_key.key_pars.private_key_pem
     host        = self.private_ip
   }
 
