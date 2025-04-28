@@ -8,8 +8,8 @@ ERROR_PATTERNS=(
     "segmentation fault"
     "Critical error"
 )
-REPORT_FILE="/var/log/error_report_$(date +%Y%m%d).log"
-THRESHOLD=5  # Notificar si hay más de X errores
+REPORT_FILE="$LOG_DIR/wordpress_service_monitor.log"
+THRESHOLD=1  # Notificar si hay más de X errores
 
 analyze_logs() {
     local count=0

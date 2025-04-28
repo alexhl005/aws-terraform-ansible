@@ -1,19 +1,34 @@
 #!/bin/bash
-# Verifica servicios y envía alertas
+# Monitor de servicios esenciales para WordPress (excepto BD)
+# Verifica Apache, PHP-FPM y otros servicios críticos
 
-SERVICES=("nginx" "mysql" "php-fpm")
+SERVICES=("apache2" "php-fpm" "cron" "rsyslog")  # Servicios típicos de WordPress
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
-LOG_FILE="/var/log/service_monitor.log"
+LOG_FILE="/var/log/wordpress_service_monitor.log"
+SLACK_REPORTER="/usr/local/bin/slack_reporter.py"  # Ruta al script Python
 
 {
-  echo "=== $TIMESTAMP ==="
+  echo "=== Monitoreo de WordPress - $TIMESTAMP ==="
+  
   for service in "${SERVICES[@]}"; do
     if systemctl is-active --quiet $service; then
-      echo "STATUS_OK: $service"
+      echo "[OK] $service está en ejecución"
     else
-      echo "STATUS_CRITICAL: $service - Intentando reinicio"
+      echo "[CRÍTICO] $service está caído - Intentando reinicio..."
       systemctl restart $service
-      /usr/bin/python3 "$(dirname "$0")/../../python/monitoring/slack_reporter.py" "$service caído - Reiniciado"
+      
+      # Verificar si el reinicio fue exitoso
+      sleep 3  # Pequeño delay para permitir el reinicio
+      if systemctl is-active --quiet $service; then
+        echo "[RECUPERADO] $service se reinició exitosamente"
+        $SLACK_REPORTER "warning" "Servicio $service reiniciado" "El servicio $service estaba caído pero se reinició automáticamente."
+      else
+        echo "[FALLO] No se pudo reiniciar $service"
+        $SLACK_REPORTER "critical" "Fallo en $service" "El servicio $service está caído y no se pudo reiniciar automáticamente. ¡Se requiere intervención manual!"
+      fi
     fi
   done
-} >> $LOG_FILE
+  
+  echo "=== Fin del monitoreo ==="
+  echo ""
+} >> $LOG_FILE 2>&1  # Redirige tanto stdout como stderr al log

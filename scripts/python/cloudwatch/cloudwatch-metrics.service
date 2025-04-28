@@ -1,0 +1,15 @@
+[Unit]
+Description=Envía métricas de sistema a AWS CloudWatch
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /opt/aws-monitoring/cloudwatch_metrics.py
+Restart=on-failure
+RestartSec=60
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target

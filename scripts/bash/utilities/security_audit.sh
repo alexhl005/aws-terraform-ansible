@@ -2,7 +2,7 @@
 # Realiza chequeos básicos de seguridad
 
 LOG_FILE="/var/log/security_audit.log"
-ALERT_THRESHOLD=3
+ALERT_THRESHOLD=1
 ALERT_COUNT=0
 
 {
