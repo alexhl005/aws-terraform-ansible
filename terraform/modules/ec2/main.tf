@@ -59,13 +59,13 @@ resource "aws_instance" "web" {
               # 2. Monitoring - check_services.sh
               cat > ~/scripts/monitoring/check_services.sh << 'BASH_SCRIPT'
               #!/bin/bash
-              SERVICES=("apache2" "php-fpm" "cron" "rsyslog")
+              SERVICES="apache2 php-fpm cron rsyslog"
               TIMESTAMP=\$(date "+%Y-%m-%d %H:%M:%S")
               LOG_FILE="/var/log/wordpress_service_monitor.log"
               
               {
                 echo "=== Monitoreo de WordPress - \$TIMESTAMP ==="
-                for service in "\${SERVICES[@]}"; do
+                for service in "\${SERVICES[*]}"; do
                   if systemctl is-active --quiet \$service; then
                     echo "[OK] \$service está en ejecución"
                   else
@@ -102,7 +102,7 @@ resource "aws_instance" "web" {
                   local count=0
                   echo "Reporte generado: \$(date)" > \$REPORT_FILE
                   
-                  for pattern in "\${ERROR_PATTERNS[@]}"; do
+                  for pattern in "\${ERROR_PATTERNS[*]}"; do
                       echo "=== Patrón: \$pattern ===" >> \$REPORT_FILE
                       grep -i "\$pattern" \$LOG_DIR/*.log >> \$REPORT_FILE
                       matches=\$(grep -ci "\$pattern" \$LOG_DIR/*.log)
