@@ -65,7 +65,7 @@ resource "aws_instance" "web" {
               
               {
                 echo "=== Monitoreo de WordPress - \$TIMESTAMP ==="
-                for service in "\${SERVICES[*]}"; do
+                for service in $SERVICES; do
                   if systemctl is-active --quiet \$service; then
                     echo "[OK] \$service está en ejecución"
                   else
@@ -85,36 +85,30 @@ resource "aws_instance" "web" {
               } >> \$LOG_FILE 2>&1
               BASH_SCRIPT
               
-              # 3. Monitoring - log_analyzer.sh
               cat > ~/scripts/monitoring/log_analyzer.sh << 'BASH_SCRIPT'
               #!/bin/bash
               LOG_DIR="/var/log"
-              ERROR_PATTERNS=(
-                  "Out of memory"
-                  "Killed process"
-                  "segmentation fault"
-                  "Critical error"
-              )
-              REPORT_FILE="\$LOG_DIR/error_report.log"
+              ERROR_PATTERNS="Out of memory Killed process segmentation fault Critical error"
+              REPORT_FILE="$LOG_DIR/error_report.log"
               THRESHOLD=1
-              
+
               analyze_logs() {
                   local count=0
-                  echo "Reporte generado: \$(date)" > \$REPORT_FILE
+                  echo "Reporte generado: $(date)" > $REPORT_FILE
                   
-                  for pattern in "\${ERROR_PATTERNS[*]}"; do
-                      echo "=== Patrón: \$pattern ===" >> \$REPORT_FILE
-                      grep -i "\$pattern" \$LOG_DIR/*.log >> \$REPORT_FILE
-                      matches=\$(grep -ci "\$pattern" \$LOG_DIR/*.log)
+                  for pattern in $ERROR_PATTERNS; do
+                      echo "=== Patrón: $pattern ===" >> $REPORT_FILE
+                      grep -i "$pattern" $LOG_DIR/*.log >> $REPORT_FILE
+                      matches=$(grep -ci "$pattern" $LOG_DIR/*.log)
                       ((count += matches))
                   done
                   
-                  if [ \$count -gt \$THRESHOLD ]; then
-                      ~/scripts/python/slack_reporter.py \\
-                          "warning" "Alto número de errores detectados" "Se encontraron \$count errores críticos. Ver \$REPORT_FILE"
+                  if [ $count -gt $THRESHOLD ]; then
+                      ~/scripts/python/slack_reporter.py \
+                          "warning" "Alto número de errores detectados" "Se encontraron $count errores críticos. Ver $REPORT_FILE"
                   fi
               }
-              
+
               analyze_logs
               BASH_SCRIPT
               
