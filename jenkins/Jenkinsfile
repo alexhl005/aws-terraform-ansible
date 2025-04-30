@@ -1,27 +1,47 @@
 pipeline {
-    agent any
+    agent {
+        label 'terraform-aws'  # Usar agente específico con herramientas instaladas
+    }
     
     environment {
         AWS_REGION = "us-east-1"
-        TF_DIR = "terraform/environments/dev"
         ANSIBLE_DIR = "ansible"
+        TF_STATE_BUCKET = "tf-state-bucket-${env.ENVIRONMENT}"
+    }
+
+    parameters {
+        string(name: 'GIT_SHA', defaultValue: '', description: 'Commit SHA from GitHub')
+        string(name: 'GIT_REF', defaultValue: '', description: 'Git reference from GitHub')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
     }
 
     triggers {
         GenericTrigger(
             genericVariables: [
                 [key: 'GIT_SHA', value: '$.sha'],
-                [key: 'GIT_REF', value: '$.ref']
+                [key: 'GIT_REF', value: '$.ref'],
+                [key: 'ENVIRONMENT', value: '$.environment']
             ],
-            token: env.JENKINS_TRIGGER_TOKEN ?: 'terraform-ci'
+            token: env.JENKINS_TRIGGER_TOKEN ?: 'terraform-ci',
+            printContributedVariables: true,
+            printPostContent: true
         )
     }
 
     stages {
         stage('Prepare Workspace') {
             steps {
-                checkout scm
-                sh 'mkdir -p tf_outputs'
+                cleanWs()
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: env.GIT_REF]],
+                    extensions: [[$class: 'CloneOption', depth: 1, noTags: false, shallow: true]],
+                    userRemoteConfigs: [[url: 'https://github.com/your-repo.git']]
+                ])
+                
+                dir("terraform/environments/${env.ENVIRONMENT}") {
+                    sh 'mkdir -p tf_outputs'
+                }
             }
         }
 
@@ -31,15 +51,21 @@ pipeline {
             }
             steps {
                 withCredentials([string(credentialsId: 'GITHUB_TOKEN', variable: 'GITHUB_TOKEN')]) {
-                    sh """
-                    curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    https://api.github.com/repos/${env.GIT_BASE_REPO}/actions/artifacts \
-                    | jq -r '.artifacts[] | select(.name == "tfplan-${env.GIT_SHA}") | .archive_download_url' \
-                    | xargs curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
-                    -o tfplan.zip
-                    unzip tfplan.zip -d ${env.TF_DIR}
-                    """
+                    script {
+                        def downloadUrl = sh(returnStdout: true, script: """
+                            curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
+                            -H "Accept: application/vnd.github.v3+json" \
+                            https://api.github.com/repos/your-org/your-repo/actions/artifacts \
+                            | jq -r '.artifacts[] | select(.name == "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}") | .archive_download_url'
+                        """).trim()
+                        
+                        sh """
+                            curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
+                            -H "Accept: application/vnd.github.v3+json" \
+                            ${downloadUrl} -o tfplan.zip
+                            unzip -o tfplan.zip -d terraform/environments/${env.ENVIRONMENT}/
+                        """
+                    }
                 }
             }
         }
@@ -47,13 +73,17 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 script {
-                    timeout(time: 15, unit: 'MINUTES') {
-                        input message: '¿Aplicar los cambios de Terraform?', 
-                              ok: 'Confirmar'
-                    }
+                    def userInput = input(
+                        id: 'confirm', 
+                        message: "¿Aplicar los cambios de Terraform en ${env.ENVIRONMENT}?", 
+                        parameters: [
+                            text(name: 'reason', description: 'Razón del despliegue', defaultValue: '')
+                        ])
                     
-                    dir(env.TF_DIR) {
-                        sh 'terraform apply -input=false tfplan'
+                    withCredentials([aws(roleArn: 'arn:aws:iam::123456789012:role/JenkinsTerraformRole', roleSessionName: 'jenkins-session')]) {
+                        dir("terraform/environments/${env.ENVIRONMENT}") {
+                            sh 'terraform apply -input=false -auto-approve tfplan'
+                        }
                     }
                 }
             }
@@ -61,9 +91,9 @@ pipeline {
 
         stage('Generate Terraform Outputs') {
             steps {
-                dir(env.TF_DIR) {
+                dir("terraform/environments/${env.ENVIRONMENT}") {
                     sh """
-                    terraform output -json > ../../tf_outputs/tf_outputs.json
+                    terraform output -json > ../../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json
                     """
                 }
             }
@@ -72,9 +102,9 @@ pipeline {
         stage('Configure Ansible Inventory') {
             steps {
                 script {
-                    def tfOutputs = readJSON file: 'tf_outputs/tf_outputs.json'
+                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
                     
-                    writeFile file: "${env.ANSIBLE_DIR}/inventories/dev/hosts", 
+                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${env.ENVIRONMENT}/hosts", 
                              text: """
                     [webservers]
                     ${tfOutputs.ec2_instances.value.join('\n')}
@@ -92,12 +122,15 @@ pipeline {
         stage('Ansible Deployment') {
             steps {
                 dir(env.ANSIBLE_DIR) {
-                    withCredentials([file(credentialsId: 'AWS_SSH_KEY', variable: 'SSH_KEY')]) {
+                    withCredentials([file(credentialsId: "AWS_SSH_KEY_${env.ENVIRONMENT}", variable: 'SSH_KEY')]) {
                         sh """
-                        cp ${SSH_KEY} /opt/keys/aws-key.pem
-                        chmod 600 /opt/keys/aws-key.pem
-                        ansible-playbook -i inventories/dev/hosts playbooks/deploy.yml \
-                          -e "@../tf_outputs/tf_outputs.json"
+                        mkdir -p /opt/keys
+                        cp ${SSH_KEY} /opt/keys/aws-key-${env.ENVIRONMENT}.pem
+                        chmod 600 /opt/keys/aws-key-${env.ENVIRONMENT}.pem
+                        
+                        ansible-playbook -i inventories/${env.ENVIRONMENT}/hosts playbooks/deploy.yml \
+                          -e "@../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json" \
+                          -e "env=${env.ENVIRONMENT}"
                         """
                     }
                 }
@@ -107,16 +140,27 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'tf_outputs/**'
+            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
             cleanWs()
         }
         failure {
-            slackSend channel: '#infra-alerts',
-                      message: "Pipeline fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            script {
+                slackSend channel: '#infra-alerts',
+                         color: 'danger',
+                         message: """Pipeline fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Environment: ${env.ENVIRONMENT}
+Commit: ${env.GIT_SHA}
+Build URL: ${env.BUILD_URL}"""
+            }
         }
         success {
-            slackSend channel: '#infra-notifications',
-                      message: "Despliegue exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            script {
+                slackSend channel: '#infra-notifications',
+                         color: 'good',
+                         message: """Despliegue exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Environment: ${env.ENVIRONMENT}
+Commit: ${env.GIT_SHA}"""
+            }
         }
     }
 }
