@@ -59,6 +59,16 @@ module "elb" {
   certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123"
 }
 
+module "s3" {
+  source = "../../modules/s3"
+
+  environment      = "dev"
+  bucket_name      = "static-files-backup"
+  vpc_id           = module.vpc.vpc_id
+  route_table_ids  = module.vpc.private_route_table_ids
+  attach_policy    = true
+}
+
 output "rds_endpoint" {
   value       = module.rds.cluster_endpoint
   description = "Endpoint del cluster RDS"
@@ -66,4 +76,19 @@ output "rds_endpoint" {
 
 output "ec2_instances" {
   value = module.ec2.instance_ids
+}
+
+output "s3_bucket_name" {
+  value       = module.s3.bucket_name
+  description = "Name of the S3 static files bucket"
+}
+
+output "s3_bucket_arn" {
+  value       = module.s3.bucket_arn
+  description = "ARN of the S3 static files bucket"
+}
+
+output "s3_vpc_endpoint_id" {
+  value       = module.s3.vpc_endpoint_id
+  description = "ID of the VPC endpoint for S3"
 }
