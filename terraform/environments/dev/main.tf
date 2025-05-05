@@ -65,7 +65,7 @@ module "s3" {
   environment      = "dev"
   bucket_name      = "static-files-backup"
   vpc_id           = module.vpc.vpc_id
-  route_table_ids  = module.vpc.private_route_table_ids
+  route_table_ids  = module.vpc.private_ec2_subnet_cidr
   attach_policy    = true
 }
 
