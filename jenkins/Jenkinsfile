@@ -34,7 +34,7 @@ pipeline {
                     $class: 'GitSCM',
                     branches: [[name: env.GIT_REF]],
                     extensions: [[$class: 'CloneOption', depth: 1, noTags: false, shallow: true]],
-                    userRemoteConfigs: [[url: 'https://github.com/aws-terraform-ansible.git']]
+                    userRemoteConfigs: [[url: 'https://github.com/alexhl005/aws-terraform-ansible.git']]
                 ])
                 
                 dir("terraform/environments/${env.ENVIRONMENT}") {
