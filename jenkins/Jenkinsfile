@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'terraform-aws'  # Usar agente específico con herramientas instaladas
+        label 'terraform-aws'  // Usar agente específico con herramientas instaladas
     }
     
     environment {
