@@ -10,6 +10,8 @@ pipeline {
     }
 
     parameters {
+        string(name: 'GIT_SHA', defaultValue: '', description: 'Commit SHA from GitHub')
+        string(name: 'GIT_REF', defaultValue: '', description: 'Git reference from GitHub')
         choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
     }
 
