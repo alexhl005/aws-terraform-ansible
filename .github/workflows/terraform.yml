@@ -20,6 +20,12 @@ on:
 
 env:
   TF_VERSION: "1.6.6"
+  JENKINS_PARAMS: |
+    {
+      "sha": "${{ github.sha }}",
+      "ref": "${{ github.ref }}",
+      "environment": "${{ github.event.inputs.environment || 'dev' }}"
+    }
 
 jobs:
   validate:
@@ -82,10 +88,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
-    steps:
-      - name: Trigger Jenkins
-        uses: machine-learning-apps/trigger-jenkins@master
-        with:
-          url: "${{ secrets.JENKINS_URL }}/job/terraform-pipeline/build"
-          token: "${{ secrets.JENKINS_TRIGGER_TOKEN }}"
-          parameters: '{"sha":"${{ github.sha }}", "ref":"${{ github.ref }}", "environment":"${{ github.event.inputs.environment || "dev" }}"}'
+  steps:
+    - name: Trigger Jenkins
+      uses: machine-learning-apps/trigger-jenkins@master
+      with:
+        url: "${{ secrets.JENKINS_URL }}/job/terraform-pipeline/build"
+        token: "${{ secrets.JENKINS_TRIGGER_TOKEN }}"
+        parameters: ${{ env.JENKINS_PARAMS }}
