@@ -21,19 +21,6 @@ pipeline {
         choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
     }
 
-    triggers {
-        GenericTrigger(
-            genericVariables: [
-                [key: 'GIT_SHA', value: '$.sha'],
-                [key: 'GIT_REF', value: '$.ref'],
-                [key: 'ENVIRONMENT', value: '$.environment']
-            ],
-            token: env.JENKINS_TRIGGER_TOKEN ?: 'terraform-ci',
-            printContributedVariables: true,
-            printPostContent: true
-        )
-    }
-
     stages {
         stage('Prepare Workspace') {
             steps {
@@ -47,31 +34,6 @@ pipeline {
                 
                 dir("terraform/environments/${env.ENVIRONMENT}") {
                     sh 'mkdir -p tf_outputs'
-                }
-            }
-        }
-
-        stage('Download Terraform Plan') {
-            when {
-                triggeredBy 'GenericTrigger'
-            }
-            steps {
-                withCredentials([string(credentialsId: 'GITHUB_TOKEN', variable: 'GITHUB_TOKEN')]) {
-                    script {
-                        def downloadUrl = sh(returnStdout: true, script: """
-                            curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
-                            -H "Accept: application/vnd.github.v3+json" \
-                            https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts \
-                            | jq -r '.artifacts[] | select(.name == "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}") | .archive_download_url'
-                        """).trim()
-                        
-                        sh """
-                            curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
-                            -H "Accept: application/vnd.github.v3+json" \
-                            ${downloadUrl} -o tfplan.zip
-                            unzip -o tfplan.zip -d terraform/environments/${env.ENVIRONMENT}/
-                        """
-                    }
                 }
             }
         }
@@ -94,7 +56,7 @@ pipeline {
                     ]]) {
                         dir("terraform/environments/${env.ENVIRONMENT}") {
                         sh 'terraform init -reconfigure'
-                        sh 'terraform apply -input=false -auto-approve tfplan'
+                        sh 'terraform apply -input=false'
                         }
                     }
                 }
