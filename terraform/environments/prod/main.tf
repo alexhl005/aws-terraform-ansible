@@ -18,7 +18,7 @@ provider "aws" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  environment               = "dev"
+  environment               = "prod"
   vpc_cidr                  = "10.0.0.0/16"
   dmz_subnet_cidr           = "10.0.1.0/24"
   private_ec2_subnet_cidr   = "10.0.2.0/24"
@@ -29,7 +29,7 @@ module "vpc" {
 module "ec2" {
   source = "../../modules/ec2"
 
-  environment        = "dev"
+  environment        = "prod"
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.vpc.private_ec2_subnet_ids
   ami_id             = "ami-0f9de6e2d2f067fca"  # Ubuntu 22.04
@@ -42,10 +42,10 @@ module "ec2" {
 module "rds" {
   source = "../../modules/rds"
 
-  environment           = "dev"
+  environment           = "prod"
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.private_rds_subnet_ids
-  db_username           = "admin_dev"
+  db_username           = "admin_prod"
   db_password           = "Root1234$"
   instance_class        = "db.c6gd.medium"
   multi_az              = true
@@ -55,7 +55,7 @@ module "rds" {
 module "elb" {
   source = "../../modules/elb"
   
-  environment         = "dev"
+  environment         = "prod"
   vpc_id              = module.vpc.vpc_id
   public_subnet_ids   = module.vpc.dmz_subnet_ids
   certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123"
@@ -64,7 +64,7 @@ module "elb" {
 module "s3" {
   source = "../../modules/s3"
 
-  environment      = "dev"
+  environment      = "prod"
   bucket_name      = "static-files-backup"
   vpc_id           = module.vpc.vpc_id
   route_table_ids  = module.vpc.private_ec2_subnet_ids
