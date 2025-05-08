@@ -119,6 +119,34 @@ pipeline {
             }
         }
 
+        stage('Update Configuration Files') {
+            steps {
+                script {
+                    // Leer los outputs de Terraform
+                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
+                    
+                    // Actualizar el archivo PHP con el cluster endpoint
+                    def phpConfigFile = "${env.ANSIBLE_DIR}/templates/wp-config.php.j2" // Asumo que es un template de Ansible
+                    def phpContent = readFile(file: phpConfigFile)
+                    phpContent = phpContent.replace("(cluster_endpoint)", tfOutputs.cluster_endpoint.value)
+                    writeFile(file: phpConfigFile, text: phpContent)
+                    
+                    // Actualizar el script bash con el bucket ARN
+                    def bashScriptFile = "${env.ANSIBLE_DIR}/files/s3_sync_script.sh" // Asumo la ubicación
+                    def bashContent = readFile(file: bashScriptFile)
+                    bashContent = bashContent.replace("(bucket_arn)", tfOutputs.bucket_arn.value)
+                    writeFile(file: bashScriptFile, text: bashContent)
+                    
+                    // Confirmar los cambios (opcional)
+                    sh """
+                        echo "Archivos actualizados:"
+                        echo " - ${phpConfigFile}: DB_HOST ahora es ${tfOutputs.cluster_endpoint.value}"
+                        echo " - ${bashScriptFile}: S3_BUCKET ahora es ${tfOutputs.bucket_arn.value}"
+                    """
+                }
+            }
+        }
+
         stage('Ansible Deployment') {
             steps {
                 dir(env.ANSIBLE_DIR) {
