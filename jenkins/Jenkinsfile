@@ -5,8 +5,11 @@ pipeline {
     
     environment {
         AWS_REGION = "us-east-1"
-        ANSIBLE_DIR = "ansible"
+        ANSIBLE_DIR = "../ansible"
         TF_STATE_BUCKET = "tf-state-bucket-${env.ENVIRONMENT}"
+        JENKINS_TRIGGER_TOKEN = credentials('JENKINS_TRIGGER_TOKEN')
+        SLACK_CHANNEL = '#infra-alerts'
+        SLACK_TOKEN_CREDENTIAL_ID = 'slack-token'
     }
 
     parameters {
@@ -126,13 +129,13 @@ pipeline {
                     def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
                     
                     // Actualizar el archivo PHP con el cluster endpoint
-                    def phpConfigFile = "${env.ANSIBLE_DIR}/templates/wp-config.php.j2" // Asumo que es un template de Ansible
+                    def phpConfigFile = "${env.ANSIBLE_DIR}/roles/wordpress/templates/wp-config.php.j2"
                     def phpContent = readFile(file: phpConfigFile)
                     phpContent = phpContent.replace("(cluster_endpoint)", tfOutputs.cluster_endpoint.value)
                     writeFile(file: phpConfigFile, text: phpContent)
                     
                     // Actualizar el script bash con el bucket ARN
-                    def bashScriptFile = "${env.ANSIBLE_DIR}/files/s3_sync_script.sh" // Asumo la ubicación
+                    def bashScriptFile = "../scripts/bash/backup/s3_sync.sh"
                     def bashContent = readFile(file: bashScriptFile)
                     bashContent = bashContent.replace("(bucket_arn)", tfOutputs.bucket_arn.value)
                     writeFile(file: bashScriptFile, text: bashContent)
@@ -156,7 +159,7 @@ pipeline {
                         cp ${SSH_KEY} /opt/keys/aws-key-${env.ENVIRONMENT}.pem
                         chmod 600 /opt/keys/aws-key-${env.ENVIRONMENT}.pem
                         
-                        ansible-playbook -i inventories/${env.ENVIRONMENT}/hosts playbooks/deploy.yml \
+                        ansible-playbook -i inventories/${env.ENVIRONMENT}/hosts playbooks/wordpress.yml \
                           -e "@../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json" \
                           -e "env=${env.ENVIRONMENT}"
                         """
@@ -175,6 +178,7 @@ pipeline {
             script {
                 slackSend channel: '#infra-alerts',
                          color: 'danger',
+                         tokenCredentialId: env.SLACK_TOKEN_CREDENTIAL_ID,
                          message: """Pipeline fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}
 Environment: ${env.ENVIRONMENT}
 Commit: ${env.GIT_SHA}
