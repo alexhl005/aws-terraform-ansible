@@ -4,6 +4,7 @@ pipeline {
     }
     
     environment {
+        JOB_NAME = "terraform-aws"
         AWS_REGION = "us-east-1"
         ANSIBLE_DIR = "../ansible"
         TF_STATE_BUCKET = "tf-state-bucket-${env.ENVIRONMENT}"
@@ -187,7 +188,7 @@ Build URL: ${env.BUILD_URL}"""
         }
         success {
             script {
-                slackSend channel: '#infra-notifications',
+                slackSend channel: '#infra-alerts',
                          color: 'good',
                          message: """Despliegue exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}
 Environment: ${env.ENVIRONMENT}
