@@ -6,11 +6,13 @@ pipeline {
     environment {
         JOB_NAME = "terraform-aws"
         AWS_REGION = "us-east-1"
+    AWS_CREDENTIALS_ID = 'aws-cli-token'
         ANSIBLE_DIR = "../ansible"
         TF_STATE_BUCKET = "tf-state-bucket-${env.ENVIRONMENT}"
         JENKINS_TRIGGER_TOKEN = credentials('JENKINS_TRIGGER_TOKEN')
         SLACK_CHANNEL = '#infra-alerts'
         SLACK_TOKEN_CREDENTIAL_ID = 'slack-token'
+        SLACK_TEAM_DOMAIN = 'aws-terraform-ansible'
     }
 
     parameters {
@@ -84,9 +86,15 @@ pipeline {
                             text(name: 'reason', description: 'Razón del despliegue', defaultValue: '')
                         ])
                     
-                    withCredentials([aws(roleArn: 'arn:aws:iam::123456789012:role/JenkinsTerraformRole', roleSessionName: 'jenkins-session')]) {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'jenkins-aws-creds',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
                         dir("terraform/environments/${env.ENVIRONMENT}") {
-                            sh 'terraform apply -input=false -auto-approve tfplan'
+                        sh 'terraform init -reconfigure'
+                        sh 'terraform apply -input=false -auto-approve tfplan'
                         }
                     }
                 }
