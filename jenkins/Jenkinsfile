@@ -115,7 +115,7 @@ pipeline {
 
                     [webservers:vars]
                     ansible_user=ubuntu
-                    ansible_ssh_private_key_file=/opt/keys/aws-key.pem
+                    ansible_ssh_private_key_file=../modules/ec2/.ssh/dev-wp-key.pem
                     db_host=${tfOutputs.rds_endpoint.value}
                     elb_dns=${tfOutputs.elb_dns_name.value}
                     """
