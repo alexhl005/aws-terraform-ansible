@@ -94,12 +94,10 @@ jobs:
     environment: ${{ github.event.inputs.environment || 'dev' }}
     steps:
       - name: Trigger Jenkins Build
-        uses: mickeygoussetorg/trigger-jenkins-job@v1
+        uses: sbitio/trigger-jenkins-job@master
         with:
-          jenkins-server: ${{ secrets.JENKINS_URL }}
-          jenkins-job: "aws-terraform-ansible"
-          jenkins-username: ${{ secrets.JENKINS_USER }}
-          jenkins-pat: ${{ secrets.JENKINS_TRIGGER_TOKEN }}
-          poll-time: 10
-          timeout-value: 600
-          verbose: true
+          JENKINS_HOST: ${{ secrets.JENKINS_URL }}
+          JENKINS_JOB: "aws-terraform-ansible"
+          JENKINS_USER: ${{ secrets.JENKINS_USER }}
+          JENKINS_TOKEN: ${{ secrets.JENKINS_TRIGGER_TOKEN }}
+          JENKINS_PARAMS: ${{ env.JENKINS_PARAMS }}
