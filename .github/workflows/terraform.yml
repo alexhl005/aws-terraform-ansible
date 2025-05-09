@@ -59,37 +59,37 @@ jobs:
         working-directory: terraform/environments/${{ matrix.env }}
 
     plan:
-    needs: validate
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'dev' }}
-    
-    steps:
-      - uses: actions/checkout@v4
+      needs: validate
+      runs-on: ubuntu-latest
+      environment: ${{ github.event.inputs.environment || 'dev' }}
+      
+      steps:
+        - uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
+        - name: Setup Terraform
+          uses: hashicorp/setup-terraform@v2
+          with:
+            terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Terraform Init
-        run: terraform init -backend-config=backend-${{ github.event.inputs.environment || 'dev' }}.conf
-        working-directory: terraform/environments/${{ github.event.inputs.environment || 'dev' }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        - name: Terraform Init
+          run: terraform init -backend-config=backend-${{ github.event.inputs.environment || 'dev' }}.conf
+          working-directory: terraform/environments/${{ github.event.inputs.environment || 'dev' }}
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-        working-directory: terraform/environments/${{ github.event.inputs.environment || 'dev' }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        - name: Terraform Plan
+          run: terraform plan -out=tfplan
+          working-directory: terraform/environments/${{ github.event.inputs.environment || 'dev' }}
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Upload Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan-${{ github.sha }}-${{ github.event.inputs.environment || 'dev' }}
-          path: terraform/environments/${{ github.event.inputs.environment || 'dev' }}/tfplan
+        - name: Upload Plan
+          uses: actions/upload-artifact@v4
+          with:
+            name: tfplan-${{ github.sha }}-${{ github.event.inputs.environment || 'dev' }}
+            path: terraform/environments/${{ github.event.inputs.environment || 'dev' }}/tfplan
 
   notify:
     name: Notify Jenkins
