@@ -91,7 +91,7 @@ jobs:
     name: Notify Jenkins
     needs: plan
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: ${{ github.event.inputs.environment || 'dev' }}
     steps:
       - name: Trigger Jenkins
         uses: machine-learning-apps/trigger-jenkins@master
