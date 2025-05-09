@@ -93,9 +93,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev' }}
     steps:
-      - name: Trigger Jenkins
-        uses: machine-learning-apps/trigger-jenkins@master
+      - name: Trigger Jenkins Build
+        uses: jenkinsci/github-actions-plugin@v1.0.1
         with:
-          url: ${{ secrets.JENKINS_URL }}/job/terraform-pipeline/build
+          jenkins-url: ${{ secrets.JENKINS_URL }}
+          job-name: "terraform-pipeline"
           token: ${{ secrets.JENKINS_TRIGGER_TOKEN }}
           parameters: ${{ env.JENKINS_PARAMS }}
