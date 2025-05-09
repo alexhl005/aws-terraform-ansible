@@ -29,9 +29,6 @@ env:
       "sha": "${{ github.sha }}",
       "ref": "${{ github.ref }}",
       "environment": "${{ github.event.inputs.environment || 'dev' }}",
-      "action": "${{ github.event_name }}",
-      "repository": "${{ github.repository }}",
-      "run_id": "${{ github.run_id }}"
     }
 jobs:
   validate:
