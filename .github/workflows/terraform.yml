@@ -94,7 +94,7 @@ jobs:
     environment: ${{ github.event.inputs.environment || 'dev' }}
     steps:
       - name: Trigger Jenkins Build
-        uses: mickeygoussetorg/trigger-jenkins-job
+        uses: mickeygoussetorg/trigger-jenkins-job@v1
         with:
           jenkins-url: ${{ secrets.JENKINS_URL }}
           job-name: "terraform-pipeline"
