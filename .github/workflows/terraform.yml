@@ -80,7 +80,7 @@ jobs:
         with:
           name: tfplan-${{ github.sha }}-${{ github.event.inputs.environment || 'dev' }}
           path: terraform/environments/${{ github.event.inputs.environment || 'dev'
-            }}/tfplan
+            }}/plan.tfplan
   notify:
     name: Notify Jenkins
     needs: plan
