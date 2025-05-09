@@ -94,9 +94,10 @@ jobs:
     environment: ${{ github.event.inputs.environment || 'dev' }}
     steps:
       - name: Trigger Jenkins Build
-        uses: mickeygoussetorg/trigger-jenkins-job@v1
+        uses: appleboy/jenkins-action@v1.1.1
         with:
-          jenkins-url: ${{ secrets.JENKINS_URL }}
-          job-name: "terraform-pipeline"
+          url: ${{ secrets.JENKINS_URL }}
+          user: ${{ secrets.JENKINS_USER }}
+          job: "aws-terraform-ansible"
           token: ${{ secrets.JENKINS_TRIGGER_TOKEN }}
           parameters: ${{ env.JENKINS_PARAMS }}
