@@ -66,9 +66,6 @@ pipeline {
         }
 
         stage('Download Terraform Plan') {
-            when {
-                triggeredBy 'GenericTrigger'
-            }
             steps {
                 withCredentials([string(credentialsId: 'GITHUB_TOKEN', variable: 'GITHUB_TOKEN')]) {
                     script {
