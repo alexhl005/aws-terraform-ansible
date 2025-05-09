@@ -24,12 +24,26 @@ pipeline {
     triggers {
         GenericTrigger(
             genericVariables: [
-                [key: 'GIT_SHA', value: '$.sha'],
-                [key: 'GIT_REF', value: '$.ref'],
-                [key: 'ENVIRONMENT', value: '$.environment']
+            [
+                key: 'GIT_SHA', 
+                value: '$.sha',
+                expressionType: 'JSONPath'  // Explicitamente usa JSONPath
             ],
-            token: env.JENKINS_TRIGGER_TOKEN ?: 'terraform-ci',
+            [
+                key: 'GIT_REF', 
+                value: '$.ref',
+                defaultValue: 'main'  // Valor por defecto
+            ],
+            [
+                key: 'ENVIRONMENT',
+                value: '$.environment',
+                regexpFilter: 'dev|prod',  // Solo acepta estos valores
+                defaultValue: 'dev'
+            ]
+        ],
+            token: 'terraform-ci',
             printContributedVariables: true,
+            silentResponse: false,
             printPostContent: true
         )
     }
