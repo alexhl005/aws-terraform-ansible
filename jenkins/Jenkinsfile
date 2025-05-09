@@ -113,7 +113,7 @@ pipeline {
                     ]]) {
                         dir("terraform/environments/${env.ENVIRONMENT}") {
                         sh 'terraform init -reconfigure'
-                        sh 'terraform apply -input=false -auto-approve tfplan'
+                        sh 'terraform apply -input=false -auto-approve plan.tfplan'
                         }
                     }
                 }
