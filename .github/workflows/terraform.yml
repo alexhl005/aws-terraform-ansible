@@ -25,9 +25,9 @@ env:
   TF_INPUT: 'false'
   JENKINS_PARAMS: |
     {
-      "sha": "${{ github.sha }}",
-      "ref": "${{ github.ref }}",
-      "environment": "${{ github.event.inputs.environment || 'dev' }}",
+      "GIT_SHA": "${{ github.sha }}",
+      "GIT_REF": "${{ github.ref }}",
+      "ENVIRONMENT": "${{ github.event.inputs.environment || 'dev' }}",
     }
 jobs:
   validate:
