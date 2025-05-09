@@ -1,27 +1,29 @@
+---
 name: Terraform CI/CD
-
 on:
   push:
-    branches: [main]
-    paths: ['terraform/environments/dev/**']
+    branches:
+      - main
+    paths:
+      - terraform/environments/dev/**
   pull_request:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to target'
+        description: Environment to target
         required: true
-        default: 'dev'
+        default: dev
         type: choice
-        options: ['dev', 'prod']
-
+        options:
+          - dev
+          - prod
 env:
-  TF_VERSION: "1.6.6"
-  AWS_REGION: "us-east-1"
-  TF_CLI_ARGS: "-no-color"
+  TF_VERSION: 1.6.6
+  AWS_REGION: us-east-1
+  TF_CLI_ARGS: -no-color
   TF_INPUT: "false"
-  
-  # Jenkins parameters
   JENKINS_PARAMS: |
     {
       "sha": "${{ github.sha }}",
@@ -31,76 +33,69 @@ env:
       "repository": "${{ github.repository }}",
       "run_id": "${{ github.run_id }}"
     }
-
 jobs:
   validate:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        env: ['dev', 'prod']
-    
+        env:
+          - dev
+          - prod
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.TF_VERSION }}
-
       - name: Terraform Init
         run: terraform init -backend-config=backend-${{ matrix.env }}.conf
         working-directory: terraform/environments/${{ matrix.env }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
       - name: Terraform Validate
         run: terraform validate
         working-directory: terraform/environments/${{ matrix.env }}
-
     plan:
       needs: validate
       runs-on: ubuntu-latest
       environment: ${{ github.event.inputs.environment || 'dev' }}
-      
       steps:
         - uses: actions/checkout@v4
-
         - name: Setup Terraform
           uses: hashicorp/setup-terraform@v2
           with:
             terraform_version: ${{ env.TF_VERSION }}
-
         - name: Terraform Init
-          run: terraform init -backend-config=backend-${{ github.event.inputs.environment || 'dev' }}.conf
-          working-directory: terraform/environments/${{ github.event.inputs.environment || 'dev' }}
+          run: terraform init -backend-config=backend-${{ github.event.inputs.environment
+            || 'dev' }}.conf
+          working-directory: terraform/environments/${{ github.event.inputs.environment ||
+            'dev' }}
           env:
             AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
         - name: Terraform Plan
           run: terraform plan -out=tfplan
-          working-directory: terraform/environments/${{ github.event.inputs.environment || 'dev' }}
+          working-directory: terraform/environments/${{ github.event.inputs.environment ||
+            'dev' }}
           env:
             AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
         - name: Upload Plan
           uses: actions/upload-artifact@v4
           with:
             name: tfplan-${{ github.sha }}-${{ github.event.inputs.environment || 'dev' }}
-            path: terraform/environments/${{ github.event.inputs.environment || 'dev' }}/tfplan
-
+            path: terraform/environments/${{ github.event.inputs.environment || 'dev'
+              }}/tfplan
   notify:
     name: Notify Jenkins
     needs: plan
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
     steps:
       - name: Trigger Jenkins
         uses: machine-learning-apps/trigger-jenkins@master
         with:
-          url: "${{ secrets.JENKINS_URL }}/job/terraform-pipeline/build"
-          token: "${{ secrets.JENKINS_TRIGGER_TOKEN }}"
+          url: ${{ secrets.JENKINS_URL }}/job/terraform-pipeline/build
+          token: ${{ secrets.JENKINS_TRIGGER_TOKEN }}
           parameters: ${{ env.JENKINS_PARAMS }}
