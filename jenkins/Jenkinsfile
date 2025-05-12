@@ -8,7 +8,7 @@ pipeline {
         AWS_REGION = "us-east-1"
         AWS_CREDENTIALS_ID = 'aws-cli-token'
         ANSIBLE_DIR = "../ansible"
-        TF_STATE_BUCKET = "tf-state-bucket-${env.ENVIRONMENT}"
+        TF_STATE_BUCKET = "tf-state-bucket-${params.ENVIRONMENT}"
         JENKINS_TRIGGER_TOKEN = "JENKINS_TRIGGER_TOKEN"
         SLACK_CHANNEL = '#infra-alerts'
         SLACK_TOKEN_CREDENTIAL_ID = 'slack-token'
@@ -54,7 +54,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
                     script {
                         // 1. Obtener información del artifact
-                        def artifactName = "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}"
+                        def artifactName = "tfplan-${params.GIT_SHA}-${params.ENVIRONMENT}"
                         echo "Buscando artifact con nombre: ${artifactName}"
                         
                         def artifactsResponse = sh(returnStdout: true, script: """
@@ -82,8 +82,8 @@ pipeline {
                                 -o tfplan.zip \\
                                 "${downloadUrl}"
                             
-                            unzip -o tfplan.zip -d "terraform/environments/${env.ENVIRONMENT}/"
-                            ls -la "terraform/environments/${env.ENVIRONMENT}/"
+                            unzip -o tfplan.zip -d "terraform/environments/${params.ENVIRONMENT}/"
+                            ls -la "terraform/environments/${params.ENVIRONMENT}/"
                             rm -f tfplan.zip
                         """
                     }
@@ -96,7 +96,7 @@ pipeline {
                 script {
                     def userInput = input(
                         id: 'confirm', 
-                        message: "¿Aplicar los cambios de Terraform en ${env.ENVIRONMENT}?", 
+                        message: "¿Aplicar los cambios de Terraform en ${params.ENVIRONMENT}?", 
                         parameters: [
                             text(name: 'reason', description: 'Razón del despliegue', defaultValue: '')
                         ])
@@ -107,7 +107,7 @@ pipeline {
                         accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
-                        dir("terraform/environments/${env.ENVIRONMENT}") {
+                        dir("terraform/environments/${params.ENVIRONMENT}") {
                             sh 'terraform init -reconfigure'
                             sh 'terraform apply -input=false -auto-approve plan.tfplan'
                         }
@@ -118,9 +118,9 @@ pipeline {
 
         stage('Generate Terraform Outputs') {
             steps {
-                dir("terraform/environments/${env.ENVIRONMENT}") {
+                dir("terraform/environments/${params.ENVIRONMENT}") {
                     sh """
-                    terraform output -json > ../../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json
+                    terraform output -json > ../../tf_outputs/tf_outputs_${params.ENVIRONMENT}.json
                     """
                 }
             }
@@ -129,9 +129,9 @@ pipeline {
         stage('Configure Ansible Inventory') {
             steps {
                 script {
-                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
+                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
                     
-                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${env.ENVIRONMENT}/hosts", 
+                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", 
                                 text: """
                     [webservers]
                     ${tfOutputs.ec2_instances.value.join('\n')}
@@ -150,7 +150,7 @@ pipeline {
             steps {
                 script {
                     // Leer los outputs de Terraform
-                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
+                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
                     
                     // Actualizar el archivo PHP con el cluster endpoint
                     def phpConfigFile = "${env.ANSIBLE_DIR}/roles/wordpress/templates/wp-config.php.j2"
@@ -177,15 +177,15 @@ pipeline {
         stage('Ansible Deployment') {
             steps {
                 dir(env.ANSIBLE_DIR) {
-                    withCredentials([file(credentialsId: "AWS_SSH_KEY_${env.ENVIRONMENT}", variable: 'SSH_KEY')]) {
+                    withCredentials([file(credentialsId: "AWS_SSH_KEY_${params.ENVIRONMENT}", variable: 'SSH_KEY')]) {
                         sh """
                         mkdir -p /opt/keys
-                        cp ${SSH_KEY} /opt/keys/aws-key-${env.ENVIRONMENT}.pem
-                        chmod 600 /opt/keys/aws-key-${env.ENVIRONMENT}.pem
+                        cp ${SSH_KEY} /opt/keys/aws-key-${params.ENVIRONMENT}.pem
+                        chmod 600 /opt/keys/aws-key-${params.ENVIRONMENT}.pem
                         
-                        ansible-playbook -i inventories/${env.ENVIRONMENT}/hosts playbooks/wordpress.yml \\
-                            -e "@../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json" \\
-                            -e "env=${env.ENVIRONMENT}"
+                        ansible-playbook -i inventories/${params.ENVIRONMENT}/hosts playbooks/wordpress.yml \\
+                            -e "@../tf_outputs/tf_outputs_${params.ENVIRONMENT}.json" \\
+                            -e "env=${params.ENVIRONMENT}"
                         """
                     }
                 }
@@ -195,7 +195,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
+            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
             cleanWs()
         }
         failure {
@@ -204,8 +204,8 @@ pipeline {
                          color: 'danger',
                          tokenCredentialId: env.SLACK_TOKEN_CREDENTIAL_ID,
                          message: """Pipeline fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}
-Environment: ${env.ENVIRONMENT}
-Commit: ${env.GIT_SHA}
+Environment: ${params.ENVIRONMENT}
+Commit: ${params.GIT_SHA}
 Build URL: ${env.BUILD_URL}"""
             }
         }
@@ -214,8 +214,8 @@ Build URL: ${env.BUILD_URL}"""
                 slackSend channel: '#infra-alerts',
                          color: 'good',
                          message: """Despliegue exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}
-Environment: ${env.ENVIRONMENT}
-Commit: ${env.GIT_SHA}"""
+Environment: ${params.ENVIRONMENT}
+Commit: ${params.GIT_SHA}"""
             }
         }
     }
