@@ -48,49 +48,49 @@ pipeline {
         )
     }
 
-    stage('Download Terraform Plan') {
-        steps {
-            withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
-                script {
-                    // 1. Obtener información del artifact
-                    def artifactName = "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}"
-                    echo "Buscando artifact con nombre: ${artifactName}"
-                    
-                    def artifactsResponse = sh(returnStdout: true, script: """
-                        curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
-                            -H "Accept: application/vnd.github.v3+json" \\
-                            "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts"
-                    """).trim()
-                    
-                    // Procesar la respuesta para encontrar el artifact específico
-                    def artifactJson = readJSON text: artifactsResponse
-                    def foundArtifact = artifactJson.artifacts.find { it.name == artifactName }
-                    
-                    if (!foundArtifact) {
-                        error "No se encontró el artifact con nombre: ${artifactName}"
-                    }
-                    
-                    def artifactId = foundArtifact.id
-                    def workflowRunId = foundArtifact.workflow_run.id
-                    def downloadUrl = foundArtifact.archive_download_url
-                    
-                    echo "Artifact encontrado - ID: ${artifactId}, Workflow Run ID: ${workflowRunId}"
-                    echo "URL de descarga: ${downloadUrl}"
-                    
-                    // 2. Descargar el artifact
-                    sh """
-                        curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
-                            -o tfplan.zip \\
-                            "${downloadUrl}"
+        stage('Download Terraform Plan') {
+            steps {
+                withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
+                    script {
+                        // 1. Obtener información del artifact
+                        def artifactName = "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}"
+                        echo "Buscando artifact con nombre: ${artifactName}"
                         
-                        unzip -o tfplan.zip -d "terraform/environments/${env.ENVIRONMENT}/"
-                        ls -la "terraform/environments/${env.ENVIRONMENT}/"
-                        rm -f tfplan.zip
-                    """
+                        def artifactsResponse = sh(returnStdout: true, script: """
+                            curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
+                                -H "Accept: application/vnd.github.v3+json" \\
+                                "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts"
+                        """).trim()
+                        
+                        // Procesar la respuesta para encontrar el artifact específico
+                        def artifactJson = readJSON text: artifactsResponse
+                        def foundArtifact = artifactJson.artifacts.find { it.name == artifactName }
+                        
+                        if (!foundArtifact) {
+                            error "No se encontró el artifact con nombre: ${artifactName}"
+                        }
+                        
+                        def artifactId = foundArtifact.id
+                        def workflowRunId = foundArtifact.workflow_run.id
+                        def downloadUrl = foundArtifact.archive_download_url
+                        
+                        echo "Artifact encontrado - ID: ${artifactId}, Workflow Run ID: ${workflowRunId}"
+                        echo "URL de descarga: ${downloadUrl}"
+                        
+                        // 2. Descargar el artifact
+                        sh """
+                            curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
+                                -o tfplan.zip \\
+                                "${downloadUrl}"
+                            
+                            unzip -o tfplan.zip -d "terraform/environments/${env.ENVIRONMENT}/"
+                            ls -la "terraform/environments/${env.ENVIRONMENT}/"
+                            rm -f tfplan.zip
+                        """
+                    }
                 }
             }
         }
-    }
 
         stage('Terraform Apply') {
             steps {
