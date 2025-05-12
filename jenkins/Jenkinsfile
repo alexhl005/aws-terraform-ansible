@@ -48,146 +48,148 @@ pipeline {
         )
     }
 
-    stage('Download Terraform Plan') {
-        steps {
-            withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
-                script {
-                    // 1. Obtener información del artifact
-                    def artifactName = "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}"
-                    echo "Buscando artifact con nombre: ${artifactName}"
-                    
-                    def artifactsResponse = sh(returnStdout: true, script: """
-                        curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
-                            -H "Accept: application/vnd.github.v3+json" \\
-                            "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts"
-                    """).trim()
-                    
-                    // Procesar la respuesta para encontrar el artifact específico
-                    def artifactJson = readJSON text: artifactsResponse
-                    def foundArtifact = artifactJson.artifacts.find { it.name == artifactName }
-                    
-                    if (!foundArtifact) {
-                        error "No se encontró el artifact con nombre: ${artifactName}"
-                    }
-                    
-                    def artifactId = foundArtifact.id
-                    def workflowRunId = foundArtifact.workflow_run.id
-                    def downloadUrl = foundArtifact.archive_download_url
-                    
-                    echo "Artifact encontrado - ID: ${artifactId}, Workflow Run ID: ${workflowRunId}"
-                    echo "URL de descarga: ${downloadUrl}"
-                    
-                    // 2. Descargar el artifact
-                    sh """
-                        curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
-                            -o tfplan.zip \\
-                            "${downloadUrl}"
+    stages {
+        stage('Download Terraform Plan') {
+            steps {
+                withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
+                    script {
+                        // 1. Obtener información del artifact
+                        def artifactName = "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}"
+                        echo "Buscando artifact con nombre: ${artifactName}"
                         
-                        unzip -o tfplan.zip -d "terraform/environments/${env.ENVIRONMENT}/"
-                        ls -la "terraform/environments/${env.ENVIRONMENT}/"
-                        rm -f tfplan.zip
-                    """
-                }
-            }
-        }
-    }
-
-    stage('Terraform Apply') {
-        steps {
-            script {
-                def userInput = input(
-                    id: 'confirm', 
-                    message: "¿Aplicar los cambios de Terraform en ${env.ENVIRONMENT}?", 
-                    parameters: [
-                        text(name: 'reason', description: 'Razón del despliegue', defaultValue: '')
-                    ])
-                
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: env.AWS_CREDENTIALS_ID,
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    dir("terraform/environments/${env.ENVIRONMENT}") {
-                    sh 'terraform init -reconfigure'
-                    sh 'terraform apply -input=false -auto-approve plan.tfplan'
+                        def artifactsResponse = sh(returnStdout: true, script: """
+                            curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
+                                -H "Accept: application/vnd.github.v3+json" \\
+                                "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts"
+                        """).trim()
+                        
+                        // Procesar la respuesta para encontrar el artifact específico
+                        def artifactJson = readJSON text: artifactsResponse
+                        def foundArtifact = artifactJson.artifacts.find { it.name == artifactName }
+                        
+                        if (!foundArtifact) {
+                            error "No se encontró el artifact con nombre: ${artifactName}"
+                        }
+                        
+                        def artifactId = foundArtifact.id
+                        def workflowRunId = foundArtifact.workflow_run.id
+                        def downloadUrl = foundArtifact.archive_download_url
+                        
+                        echo "Artifact encontrado - ID: ${artifactId}, Workflow Run ID: ${workflowRunId}"
+                        echo "URL de descarga: ${downloadUrl}"
+                        
+                        // 2. Descargar el artifact
+                        sh """
+                            curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
+                                -o tfplan.zip \\
+                                "${downloadUrl}"
+                            
+                            unzip -o tfplan.zip -d "terraform/environments/${env.ENVIRONMENT}/"
+                            ls -la "terraform/environments/${env.ENVIRONMENT}/"
+                            rm -f tfplan.zip
+                        """
                     }
                 }
             }
         }
-    }
 
-    stage('Generate Terraform Outputs') {
-        steps {
-            dir("terraform/environments/${env.ENVIRONMENT}") {
-                sh """
-                terraform output -json > ../../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json
-                """
-            }
-        }
-    }
-
-    stage('Configure Ansible Inventory') {
-        steps {
-            script {
-                def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
-                
-                writeFile file: "${env.ANSIBLE_DIR}/inventories/${env.ENVIRONMENT}/hosts", 
-                            text: """
-                [webservers]
-                ${tfOutputs.ec2_instances.value.join('\n')}
-
-                [webservers:vars]
-                ansible_user=ubuntu
-                ansible_ssh_private_key_file=../modules/ec2/.ssh/dev-wp-key.pem
-                db_host=${tfOutputs.rds_endpoint.value}
-                elb_dns=${tfOutputs.elb_dns_name.value}
-                """
-            }
-        }
-    }
-
-    stage('Update Configuration Files') {
-        steps {
-            script {
-                // Leer los outputs de Terraform
-                def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
-                
-                // Actualizar el archivo PHP con el cluster endpoint
-                def phpConfigFile = "${env.ANSIBLE_DIR}/roles/wordpress/templates/wp-config.php.j2"
-                def phpContent = readFile(file: phpConfigFile)
-                phpContent = phpContent.replace("(cluster_endpoint)", tfOutputs.cluster_endpoint.value)
-                writeFile(file: phpConfigFile, text: phpContent)
-                
-                // Actualizar el script bash con el bucket ARN
-                def bashScriptFile = "../scripts/bash/backup/s3_sync.sh"
-                def bashContent = readFile(file: bashScriptFile)
-                bashContent = bashContent.replace("(bucket_arn)", tfOutputs.bucket_arn.value)
-                writeFile(file: bashScriptFile, text: bashContent)
-                
-                // Confirmar los cambios (opcional)
-                sh """
-                    echo "Archivos actualizados:"
-                    echo " - ${phpConfigFile}: DB_HOST ahora es ${tfOutputs.cluster_endpoint.value}"
-                    echo " - ${bashScriptFile}: S3_BUCKET ahora es ${tfOutputs.bucket_arn.value}"
-                """
-            }
-        }
-    }
-
-    stage('Ansible Deployment') {
-        steps {
-            dir(env.ANSIBLE_DIR) {
-                withCredentials([file(credentialsId: "AWS_SSH_KEY_${env.ENVIRONMENT}", variable: 'SSH_KEY')]) {
-                    sh """
-                    mkdir -p /opt/keys
-                    cp ${SSH_KEY} /opt/keys/aws-key-${env.ENVIRONMENT}.pem
-                    chmod 600 /opt/keys/aws-key-${env.ENVIRONMENT}.pem
+        stage('Terraform Apply') {
+            steps {
+                script {
+                    def userInput = input(
+                        id: 'confirm', 
+                        message: "¿Aplicar los cambios de Terraform en ${env.ENVIRONMENT}?", 
+                        parameters: [
+                            text(name: 'reason', description: 'Razón del despliegue', defaultValue: '')
+                        ])
                     
-                    ansible-playbook -i inventories/${env.ENVIRONMENT}/hosts playbooks/wordpress.yml \
-                        -e "@../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json" \
-                        -e "env=${env.ENVIRONMENT}"
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: env.AWS_CREDENTIALS_ID,
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        dir("terraform/environments/${env.ENVIRONMENT}") {
+                            sh 'terraform init -reconfigure'
+                            sh 'terraform apply -input=false -auto-approve plan.tfplan'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Generate Terraform Outputs') {
+            steps {
+                dir("terraform/environments/${env.ENVIRONMENT}") {
+                    sh """
+                    terraform output -json > ../../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json
                     """
+                }
+            }
+        }
+
+        stage('Configure Ansible Inventory') {
+            steps {
+                script {
+                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
+                    
+                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${env.ENVIRONMENT}/hosts", 
+                                text: """
+                    [webservers]
+                    ${tfOutputs.ec2_instances.value.join('\n')}
+
+                    [webservers:vars]
+                    ansible_user=ubuntu
+                    ansible_ssh_private_key_file=../modules/ec2/.ssh/dev-wp-key.pem
+                    db_host=${tfOutputs.rds_endpoint.value}
+                    elb_dns=${tfOutputs.elb_dns_name.value}
+                    """
+                }
+            }
+        }
+
+        stage('Update Configuration Files') {
+            steps {
+                script {
+                    // Leer los outputs de Terraform
+                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${env.ENVIRONMENT}.json"
+                    
+                    // Actualizar el archivo PHP con el cluster endpoint
+                    def phpConfigFile = "${env.ANSIBLE_DIR}/roles/wordpress/templates/wp-config.php.j2"
+                    def phpContent = readFile(file: phpConfigFile)
+                    phpContent = phpContent.replace("(cluster_endpoint)", tfOutputs.cluster_endpoint.value)
+                    writeFile(file: phpConfigFile, text: phpContent)
+                    
+                    // Actualizar el script bash con el bucket ARN
+                    def bashScriptFile = "../scripts/bash/backup/s3_sync.sh"
+                    def bashContent = readFile(file: bashScriptFile)
+                    bashContent = bashContent.replace("(bucket_arn)", tfOutputs.bucket_arn.value)
+                    writeFile(file: bashScriptFile, text: bashContent)
+                    
+                    // Confirmar los cambios (opcional)
+                    sh """
+                        echo "Archivos actualizados:"
+                        echo " - ${phpConfigFile}: DB_HOST ahora es ${tfOutputs.cluster_endpoint.value}"
+                        echo " - ${bashScriptFile}: S3_BUCKET ahora es ${tfOutputs.bucket_arn.value}"
+                    """
+                }
+            }
+        }
+
+        stage('Ansible Deployment') {
+            steps {
+                dir(env.ANSIBLE_DIR) {
+                    withCredentials([file(credentialsId: "AWS_SSH_KEY_${env.ENVIRONMENT}", variable: 'SSH_KEY')]) {
+                        sh """
+                        mkdir -p /opt/keys
+                        cp ${SSH_KEY} /opt/keys/aws-key-${env.ENVIRONMENT}.pem
+                        chmod 600 /opt/keys/aws-key-${env.ENVIRONMENT}.pem
+                        
+                        ansible-playbook -i inventories/${env.ENVIRONMENT}/hosts playbooks/wordpress.yml \\
+                            -e "@../tf_outputs/tf_outputs_${env.ENVIRONMENT}.json" \\
+                            -e "env=${env.ENVIRONMENT}"
+                        """
+                    }
                 }
             }
         }
