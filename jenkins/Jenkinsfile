@@ -69,22 +69,30 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
                     script {
-                        // 1. Obtener artifact ID
+                        // 1. Obtener información del artifact
                         def artifactInfo = sh(returnStdout: true, script: """
                             curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
                                 -H "Accept: application/vnd.github.v3+json" \\
                                 "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts" \\
-                            | jq -r '.artifacts[] | select(.name == "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}") | {id, url}'
+                            | jq -r '.artifacts[] | select(.name == "tfplan-${env.GIT_SHA}-${env.ENVIRONMENT}") | {id, workflow_run}'
                         """).trim()
 
                         def artifactId = sh(returnStdout: true, script: """
                             echo '${artifactInfo}' | jq -r '.id'
                         """).trim()
 
+                        def workflowRunId = sh(returnStdout: true, script: """
+                            echo '${artifactInfo}' | jq -r '.workflow_run.id'
+                        """).trim()
+
+                        // Construir la URL de descarga directa
+                        def downloadUrl = "https://github.com/alexhl005/aws-terraform-ansible/actions/runs/${workflowRunId}/artifacts/${artifactId}"
+
                         sh """
+                            echo "Descargando plan de Terraform desde: ${downloadUrl}"
                             curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
                                 -H "Accept: application/vnd.github.v3+json" \\
-                                "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts/${artifactId}/zip" \\
+                                "${downloadUrl}" \\
                                 -o tfplan.zip
                             
                             unzip -o tfplan.zip -d "terraform/environments/${env.ENVIRONMENT}/"
