@@ -27,6 +27,8 @@ pipeline {
             [
                 key: 'GIT_SHA', 
                 value: '$.sha',
+                regexpFilterText: '$.sha', // Aquí se aplicará el regexp
+                regexpFilter: '"sha":\\s*"(.*?)"'
                 expressionType: 'JSONPath'  // Explicitamente usa JSONPath
             ],
             [
