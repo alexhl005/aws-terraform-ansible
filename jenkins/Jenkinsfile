@@ -50,6 +50,9 @@ pipeline {
 
     stages {
         stage('Download Terraform Plan') {
+            when {
+                expression { return params.GIT_SHA?.trim() } // Solo ejecuta si viene del webhook
+            }
             steps {
                 withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
                     script {
