@@ -95,8 +95,4 @@ jobs:
           curl -X POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{ secrets.TOKEN_JOB }}" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.JENKINS_TRIGGER_TOKEN }}" \
-            -d '{
-              "sha": "${{ github.sha }}",
-              "ref": "${{ github.ref }}",
-              "environment": "${{ github.event.inputs.environment || 'dev' }}"
-            }'
+            -d '${{ env.JENKINS_PARAMS }}'
