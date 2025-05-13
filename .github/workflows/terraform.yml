@@ -105,7 +105,7 @@ jobs:
 
                     cat payload.json  # Debug output
 
-                    curl -X POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{ secrets.TOKEN_JOB }}" \
+                    curl -X -v POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{ secrets.TOKEN_JOB }}" \
                       -H "Content-Type: application/json" \
                       -H "Authorization: Bearer ${{ secrets.JENKINS_TRIGGER_TOKEN }}" \
                       -d @payload.json
