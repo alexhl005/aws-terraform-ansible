@@ -86,27 +86,17 @@ jobs:
     needs: plan
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev' }}
-    env:
-      COMMIT_SHA: ${{ github.sha }}
-      GIT_REF: ${{ github.ref }}
-      TARGET_ENV: ${{ github.event.inputs.environment || 'dev' }}
     steps:
       - name: Trigger Jenkins Job
         run: |
-          echo 'Triggering Jenkins with the following payload:'
+          echo 'Triggering Jenkins with params:'
+          echo '${{ env.JENKINS_PARAMS }}'
 
-          cat <<EOF > payload.json
-          {
-            "sha": "${COMMIT_SHA}",
-            "ref": "${GIT_REF}",
-            "environment": "${TARGET_ENV}"
-          }
-          EOF
-
-                    cat payload.json  # Debug output
-
-                    curl -X -v POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{ secrets.TOKEN_JOB }}" \
-                      -H "Content-Type: application/json" \
-                      -H "Authorization: Bearer ${{ secrets.JENKINS_TRIGGER_TOKEN }}" \
-                      -d @payload.json
-
+          curl -X POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{ secrets.TOKEN_JOB }}" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.JENKINS_TRIGGER_TOKEN }}" \
+            -d '{
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref }}",
+              "environment": "${{ github.event.inputs.environment || 'dev' }}"
+            }'
