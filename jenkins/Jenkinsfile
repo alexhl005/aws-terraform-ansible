@@ -27,7 +27,6 @@ pipeline {
             [
                 key: 'GIT_SHA', 
                 value: '$.sha',
-                expressionType: 'JSONPath'  // Explicitamente usa JSONPath
             ],
             [
                 key: 'GIT_REF', 
