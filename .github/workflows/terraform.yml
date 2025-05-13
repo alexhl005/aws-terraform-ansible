@@ -27,7 +27,7 @@ env:
     {
       "sha": "${{ github.sha }}",
       "ref": "${{ github.ref }}",
-      "environment": "${{ github.event.inputs.environment || 'dev' }}",
+      "environment": "${{ github.event.inputs.environment || 'dev' }}"
     }
 jobs:
   validate:
