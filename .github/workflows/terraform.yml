@@ -23,12 +23,12 @@ env:
   AWS_REGION: us-east-1
   TF_CLI_ARGS: '-no-color'
   TF_INPUT: 'false'
-  JENKINS_PARAMS: |
-    {
-      "sha": "${{ github.sha }}",
-      "ref": "${{ github.ref }}",
-      "environment": "${{ github.event.inputs.environment || 'dev' }}"
-    }
+#  JENKINS_PARAMS: |
+#    {
+#      "sha": "${{ github.sha }}",
+#      "ref": "${{ github.ref }}",
+#      "environment": "${{ github.event.inputs.environment || 'dev' }}"
+#    }
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -91,8 +91,12 @@ jobs:
         run: |
           echo 'Triggering Jenkins with params:'
           echo '${{ env.JENKINS_PARAMS }}'
-
           curl -X POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{ secrets.TOKEN_JOB }}" \
-            -H "Content-Type: application/json" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
             -H "Authorization: Bearer ${{ secrets.JENKINS_TRIGGER_TOKEN }}" \
-            -d '${{ env.JENKINS_PARAMS }}'
+            -d "sha=${{ github.sha }}&ref=${{ github.ref }}&environment=${{ github.event.inputs.environment || 'dev' }}"
+
+#          curl -X POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{    secrets.TOKEN_JOB }}" \
+#            -H "Content-Type: application/json" \
+#            -H "Authorization: Bearer ${{ secrets.JENKINS_TRIGGER_TOKEN }}" \
+#            -d '${{ env.JENKINS_PARAMS }}'
