@@ -217,6 +217,7 @@ Build URL: ${env.BUILD_URL}"""
             script {
                 slackSend channel: '#infra-alerts',
                          color: 'good',
+                         tokenCredentialId: env.SLACK_TOKEN_CREDENTIAL_ID,
                          message: """Despliegue exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}
 Environment: ${params.ENVIRONMENT}
 Commit: ${params.GIT_SHA}"""
