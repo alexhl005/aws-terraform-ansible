@@ -49,8 +49,6 @@ pipeline {
             silentResponse: false,
             printPostContent: true,
             causeString: 'Triggered by GitHub Actions',
-            // Asegurarse de que el content type sea JSON
-            contentType: 'APPLICATION_JSON'
         )
     }
 
