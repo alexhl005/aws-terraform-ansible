@@ -54,53 +54,37 @@ pipeline {
 
     stages {
         stage('Download Terraform Plan') {
-            when { 
-                expression { params.GIT_SHA?.trim() } 
+            when {
+                expression { params.GIT_SHA?.trim() }
             }
             steps {
                 withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
                     script {
-                        // 1. Buscar el workflow run específico
-                        def runResponse = httpRequest(
-                            url: "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/runs?head_sha=${params.GIT_SHA}&event=push&per_page=1",
-                            customHeaders: [
-                                [name: 'Authorization', value: "token ${JENKINS_TRIGGER_TOKEN}"],
-                                [name: 'Accept', value: 'application/vnd.github.v3+json']
-                            ]
-                        )
-                        
-                        def runData = readJSON text: runResponse.content
-                        if (runData.total_count == 0) {
-                            error "No se encontró el workflow run para el commit SHA: ${params.GIT_SHA}"
-                        }
-                        
-                        def runId = runData.workflow_runs[0].id
-                        echo "Workflow Run ID encontrado: ${runId}"
-                        
-                        // 2. Obtener los artifacts de este run
                         def artifactsResponse = httpRequest(
-                            url: "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/runs/${runId}/artifacts",
+                            url: "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts",
                             customHeaders: [
                                 [name: 'Authorization', value: "token ${JENKINS_TRIGGER_TOKEN}"],
                                 [name: 'Accept', value: 'application/vnd.github.v3+json']
                             ]
                         )
-                        
-                        def artifactsData = readJSON text: artifactsResponse.content
-                        def artifact = artifactsData.artifacts.find { 
-                            it.name.startsWith("tfplan-") && it.name.endsWith("-${params.ENVIRONMENT}") 
+                        def artifacts = readJSON text: artifactsResponse.content
+                        def artifact = artifacts.artifacts.find {
+                            it.workflow_run?.head_sha == params.GIT_SHA &&
+                            it.name.endsWith("-${params.ENVIRONMENT}")
                         }
-                        
+
                         if (!artifact) {
-                            error "No se encontró el artifact para el environment ${params.ENVIRONMENT} en el run ${runId}"
+                            error "Artifact no encontrado para SHA ${params.GIT_SHA} y entorno ${params.ENVIRONMENT}"
                         }
-                        
-                        // 3. Descargar directamente usando la URL del artifact
+
+                        def artifactUrl = artifact.archive_download_url.replace('/zip', '')
+                        echo "Artifact URL: ${artifactUrl}"
+
                         dir("terraform/environments/${params.ENVIRONMENT}") {
                             sh """
-                                curl -sL -H "Authorization: token ${JENKINS_TRIGGER_TOKEN}" \
-                                    -o plan.tfplan \
-                                    "${artifact.archive_download_url}"
+                                curl -sL -H "Authorization: token ${JENKINS_TRIGGER_TOKEN}" \\
+                                    -o plan.tfplan \\
+                                    ${artifact.archive_download_url}
                                 ls -la
                             """
                         }
