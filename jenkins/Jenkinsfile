@@ -82,9 +82,13 @@ pipeline {
 
                         dir("terraform/environments/${params.ENVIRONMENT}") {
                             sh """
-                                curl -sL \\
-                                    -o tfplan \\
+                                curl -sL -H 'Authorization: token ${JENKINS_TRIGGER_TOKEN}' \\
+                                    -o tfplan.zip \\
                                     ${artifact.archive_download_url}
+
+                                unzip -o tfplan.zip
+                                rm tfplan.zip
+
                                 ls -la
                             """
                         }
