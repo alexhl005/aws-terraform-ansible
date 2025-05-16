@@ -83,7 +83,7 @@ pipeline {
                         dir("terraform/environments/${params.ENVIRONMENT}") {
                             sh """
                                 curl -sL \\
-                                    -o plan.tfplan \\
+                                    -o tfplan \\
                                     ${artifact.archive_download_url}
                                 ls -la
                             """
@@ -111,7 +111,7 @@ pipeline {
                     ]]) {
                         dir("terraform/environments/${params.ENVIRONMENT}") {
                             sh 'terraform init -reconfigure'
-                            sh 'terraform apply -input=false -auto-approve plan.tfplan'
+                            sh 'terraform apply -input=false -auto-approve tfplan'
                         }
                     }
                 }
