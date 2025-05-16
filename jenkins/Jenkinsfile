@@ -54,45 +54,56 @@ pipeline {
 
     stages {
         stage('Download Terraform Plan') {
-            when {
-                expression { return params.GIT_SHA?.trim() } // Solo ejecuta si viene del webhook
+            when { 
+                expression { params.GIT_SHA?.trim() } 
             }
             steps {
                 withCredentials([string(credentialsId: 'JENKINS_TRIGGER_TOKEN', variable: 'JENKINS_TRIGGER_TOKEN')]) {
                     script {
-                        // 1. Obtener información del artifact
-                        def artifactName = "tfplan-${params.GIT_SHA}-${params.ENVIRONMENT}"
-                        echo "Buscando artifact con nombre: ${artifactName}"
+                        // 1. Buscar el workflow run específico
+                        def runResponse = httpRequest(
+                            url: "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/runs?head_sha=${params.GIT_SHA}&event=push&per_page=1",
+                            customHeaders: [
+                                [name: 'Authorization', value: "token ${JENKINS_TRIGGER_TOKEN}"],
+                                [name: 'Accept', value: 'application/vnd.github.v3+json']
+                            ]
+                        )
                         
-                        def artifactsResponse = sh(returnStdout: true, script: """
-                            curl -sL https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/artifacts
-                        """).trim()
-                        
-                        // Procesar la respuesta para encontrar el artifact específico
-                        def artifactJson = readJSON text: artifactsResponse
-                        def foundArtifact = artifactJson.artifacts.find { it.name == artifactName }
-                        
-                        if (!foundArtifact) {
-                            error "No se encontró el artifact con nombre: ${artifactName}"
+                        def runData = readJSON text: runResponse.content
+                        if (runData.total_count == 0) {
+                            error "No se encontró el workflow run para el commit SHA: ${params.GIT_SHA}"
                         }
                         
-                        def artifactId = foundArtifact.id
-                        def workflowRunId = foundArtifact.workflow_run.id
-                        def downloadUrl = foundArtifact.archive_download_url
+                        def runId = runData.workflow_runs[0].id
+                        echo "Workflow Run ID encontrado: ${runId}"
                         
-                        echo "Artifact encontrado - ID: ${artifactId}, Workflow Run ID: ${workflowRunId}"
-                        echo "URL de descarga: ${downloadUrl}"
+                        // 2. Obtener los artifacts de este run
+                        def artifactsResponse = httpRequest(
+                            url: "https://api.github.com/repos/alexhl005/aws-terraform-ansible/actions/runs/${runId}/artifacts",
+                            customHeaders: [
+                                [name: 'Authorization', value: "token ${JENKINS_TRIGGER_TOKEN}"],
+                                [name: 'Accept', value: 'application/vnd.github.v3+json']
+                            ]
+                        )
                         
-                        // 2. Descargar el artifact
-                        sh """
-                            curl -sL -H "Authorization: token \$JENKINS_TRIGGER_TOKEN" \\
-                                -o tfplan.zip \\
-                                "${downloadUrl}"
-                            
-                            unzip -o tfplan.zip -d "terraform/environments/${params.ENVIRONMENT}/"
-                            ls -la "terraform/environments/${params.ENVIRONMENT}/"
-                            rm -f tfplan.zip
-                        """
+                        def artifactsData = readJSON text: artifactsResponse.content
+                        def artifact = artifactsData.artifacts.find { 
+                            it.name.startsWith("tfplan-") && it.name.endsWith("-${params.ENVIRONMENT}") 
+                        }
+                        
+                        if (!artifact) {
+                            error "No se encontró el artifact para el environment ${params.ENVIRONMENT} en el run ${runId}"
+                        }
+                        
+                        // 3. Descargar directamente usando la URL del artifact
+                        dir("terraform/environments/${params.ENVIRONMENT}") {
+                            sh """
+                                curl -sL -H "Authorization: token ${JENKINS_TRIGGER_TOKEN}" \
+                                    -o plan.tfplan \
+                                    "${artifact.archive_download_url}"
+                                ls -la
+                            """
+                        }
                     }
                 }
             }
