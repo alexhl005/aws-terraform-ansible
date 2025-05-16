@@ -24,28 +24,33 @@ pipeline {
     triggers {
         GenericTrigger(
             genericVariables: [
-            [
-                key: 'GIT_SHA', 
-                value: '$.sha',
-                regexpFilterText: '$.sha', // Aquí se aplicará el regexp
-                //expressionType: 'JSONPath'  // Explicitamente usa JSONPath
+                [
+                    key: 'GIT_SHA', 
+                    value: '$.sha',
+                    expressionType: 'JSONPath',
+                    defaultValue: ''
+                ],
+                [
+                    key: 'GIT_REF', 
+                    value: '$.ref',
+                    expressionType: 'JSONPath',
+                    defaultValue: 'main'
+                ],
+                [
+                    key: 'ENVIRONMENT',
+                    value: '$.environment',
+                    expressionType: 'JSONPath',
+                    regexpFilter: 'dev|prod',
+                    defaultValue: 'dev'
+                ]
             ],
-            [
-                key: 'GIT_REF', 
-                value: '$.ref',
-                defaultValue: 'main'  // Valor por defecto
-            ],
-            [
-                key: 'ENVIRONMENT',
-                value: '$.environment',
-                regexpFilter: 'dev|prod',  // Solo acepta estos valores
-                defaultValue: 'dev'
-            ]
-        ],
             token: 'terraform-ci',
             printContributedVariables: true,
             silentResponse: false,
-            printPostContent: true
+            printPostContent: true,
+            causeString: 'Triggered by GitHub Actions',
+            // Asegurarse de que el content type sea JSON
+            contentType: 'APPLICATION_JSON'
         )
     }
 

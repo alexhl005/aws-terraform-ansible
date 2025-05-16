@@ -81,6 +81,7 @@ jobs:
           name: tfplan-${{ github.sha }}-${{ github.event.inputs.environment || 'dev' }}
           path: terraform/environments/${{ github.event.inputs.environment || 'dev'
             }}/plan.tfplan
+
   notify:
     name: Notify Jenkins
     needs: plan
@@ -89,14 +90,19 @@ jobs:
     steps:
       - name: Trigger Jenkins Job
         run: |
-          echo 'Triggering Jenkins with params:'
-          echo '${{ env.JENKINS_PARAMS }}'
+          # Crear un objeto JSON con todos los parámetros
+          echo 'Generando payload JSON...'
+          PAYLOAD=$(jq -n \
+            --arg sha "${{ github.sha }}" \
+            --arg ref "${{ github.ref }}" \
+            --arg environment "${{ github.event.inputs.environment || 'dev' }}" \
+            '{sha: $sha, ref: $ref, environment: $environment}')
+          
+          echo "Payload generado:"
+          echo "$PAYLOAD"
+          
+          # Enviar el payload como JSON
           curl -X POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{ secrets.TOKEN_JOB }}" \
-            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.JENKINS_TRIGGER_TOKEN }}" \
-            -d "sha=${{ github.sha }}&ref=${{ github.ref }}&environment=${{ github.event.inputs.environment || 'dev' }}"
-
-#          curl -X POST "${{ secrets.JENKINS_URL }}/generic-webhook-trigger/invoke?token=${{    secrets.TOKEN_JOB }}" \
-#            -H "Content-Type: application/json" \
-#            -H "Authorization: Bearer ${{ secrets.JENKINS_TRIGGER_TOKEN }}" \
-#            -d '${{ env.JENKINS_PARAMS }}'
+            -d "$PAYLOAD"
