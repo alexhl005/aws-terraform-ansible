@@ -13,3 +13,8 @@ output "private_ec2_subnet_ids" {
 output "private_rds_subnet_ids" {
   value = aws_subnet.private_rds[*].id
 }
+
+output "route_table_id" {
+  description = "ID de la tabla de rutas principal"
+  value       = aws_route_table.main.id
+}

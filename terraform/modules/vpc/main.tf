@@ -8,7 +8,7 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "dmz" {
-  count                   = 1
+  count                   = 2
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.dmz_subnet_cidr
   availability_zone       = var.azs[count.index]
@@ -19,7 +19,7 @@ resource "aws_subnet" "dmz" {
 }
 
 resource "aws_subnet" "private_ec2" {
-  count             = 1
+  count             = 3
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_ec2_subnet_cidr
   availability_zone = var.azs[count.index]
@@ -29,7 +29,7 @@ resource "aws_subnet" "private_ec2" {
 }
 
 resource "aws_subnet" "private_rds" {
-  count             = 1
+  count             = 3
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_rds_subnet_cidr
   availability_zone = var.azs[count.index]
@@ -43,4 +43,23 @@ resource "aws_internet_gateway" "igw" {
   tags = {
     Name = "${var.environment}-igw"
   }
+}
+
+resource "aws_route_table" "main" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "main-rt"
+  }
+}
+
+resource "aws_route_table_association" "dmz" {
+  count          = 2
+  subnet_id      = aws_subnet.dmz[count.index].id
+  route_table_id = aws_route_table.main.id
 }

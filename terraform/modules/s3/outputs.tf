@@ -12,3 +12,8 @@ output "vpc_endpoint_id" {
   value       = aws_vpc_endpoint.s3.id
   description = "ID of the VPC endpoint for S3"
 }
+
+variable "route_table_id" {
+  description = "ID de la tabla de rutas para el endpoint S3"
+  type        = string
+}
