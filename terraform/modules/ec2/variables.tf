@@ -40,3 +40,8 @@ variable "ssh_allowed_cidrs" {
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
+
+variable "dmz_subnet_id" {
+  description = "Subnet pública (DMZ) donde estará el bastión"
+  type        = string
+}

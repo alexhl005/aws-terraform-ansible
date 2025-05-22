@@ -136,18 +136,21 @@ pipeline {
             steps {
                 script {
                     def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
-                    
-                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", 
-                                text: """
-                    [webservers]
-                    ${tfOutputs.ec2_instances.value.join('\n')}
+                    def webIps = tfOutputs.ec2_instances.value.join('\n')
+                    def bastionIp = tfOutputs.bastion_public_ip.value
 
-                    [webservers:vars]
-                    ansible_user=ubuntu
-                    ansible_ssh_private_key_file=../modules/ec2/.ssh/dev-wp-key.pem
-                    db_host=${tfOutputs.rds_endpoint.value}
-                    elb_dns=${tfOutputs.elb_dns_name.value}
-                    """
+                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", 
+                        text: """
+        [webservers]
+        ${webIps}
+
+        [webservers:vars]
+        ansible_user=ubuntu
+        ansible_ssh_private_key_file=../modules/ec2/.ssh/${params.ENVIRONMENT}-wp-key.pem
+        ansible_ssh_common_args='-o ProxyJump=ubuntu@${bastionIp}'
+        db_host=${tfOutputs.rds_endpoint.value}
+        elb_dns=${tfOutputs.elb_dns_name.value}
+        """
                 }
             }
         }

@@ -15,6 +15,47 @@ resource "local_file" "private_key" {
   file_permission = "0600"
 }
 
+#Configuración de un bastion para gestionar las instancias
+resource "aws_instance" "bastion" {
+  ami                         = var.ami_id
+  instance_type               = "t2.micro"
+  subnet_id                   = var.dmz_subnet_id
+  vpc_security_group_ids      = [aws_security_group.bastion.id]
+  associate_public_ip_address = true
+  key_name                    = aws_key_pair.key_pars.key_name
+
+  tags = {
+    Name = "${var.environment}-bastion"
+  }
+}
+
+resource "aws_security_group" "bastion" {
+  name        = "${var.environment}-bastion-sg"
+  description = "SSH access desde IP externa y hacia EC2 privadas"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "SSH desde tu IP"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["185.118.190.153/32"]  # Cambia esto por tu IP real si es diferente
+  }
+
+  egress {
+    description = "Permitir salida SSH hacia la red interna"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  tags = {
+    Name = "${var.environment}-bastion-sg"
+  }
+}
+
+
 # Instancia EC2
 resource "aws_instance" "web" {
   count         = var.instance_count
@@ -35,11 +76,15 @@ resource "aws_instance" "web" {
               EOF
 
   # Conexión SSH
-  connection {
+    connection {
     type        = "ssh"
     user        = "ubuntu"
     private_key = tls_private_key.key_pars.private_key_pem
     host        = self.private_ip
+
+    bastion_host        = aws_instance.bastion.public_ip
+    bastion_user        = "ubuntu"
+    bastion_private_key = tls_private_key.key_pars.private_key_pem
   }
 
   # Copiar scripts - Manteniendo tu estructura de carpetas
