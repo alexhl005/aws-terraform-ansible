@@ -1,9 +1,9 @@
 resource "aws_s3_bucket" "backup_bucket" {
-  bucket = "${var.environment}-backup-bucket"
+  bucket = "${var.environment}-${var.bucket_name}"
   
   tags = {
     Environment = var.environment
-    Name        = "${var.environment}-backup-bucket"
+    Name        = "${var.environment}-${var.bucket_name}"
   }
 }
 
