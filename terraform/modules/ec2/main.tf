@@ -151,6 +151,14 @@ resource "aws_security_group" "ec2" {
   }
 
   ingress {
+    description = "SSH access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = "185.118.190.153/32"
+  }
+
+  ingress {
     description = "HTTP from ELB"
     from_port   = 80
     to_port     = 80
