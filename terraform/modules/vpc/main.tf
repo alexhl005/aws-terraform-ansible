@@ -10,7 +10,7 @@ resource "aws_vpc" "main" {
 resource "aws_subnet" "dmz" {
   count                   = 2
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.dmz_subnet_cidr
+  cidr_block              = var.dmz_subnet_cidr[count.index]
   availability_zone       = var.azs[count.index]
   map_public_ip_on_launch = true
   tags = {
@@ -21,7 +21,7 @@ resource "aws_subnet" "dmz" {
 resource "aws_subnet" "private_ec2" {
   count             = 3
   vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_ec2_subnet_cidr
+  cidr_block        = var.private_ec2_subnet_cidr[count.index]
   availability_zone = var.azs[count.index]
   tags = {
     Name = "${var.environment}-private-${count.index}"
@@ -31,7 +31,7 @@ resource "aws_subnet" "private_ec2" {
 resource "aws_subnet" "private_rds" {
   count             = 3
   vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_rds_subnet_cidr
+  cidr_block        = var.private_rds_subnet_cidr[count.index]
   availability_zone = var.azs[count.index]
   tags = {
     Name = "${var.environment}-private-${count.index}"

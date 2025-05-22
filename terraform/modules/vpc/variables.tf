@@ -10,17 +10,17 @@ variable "vpc_cidr" {
 
 variable "dmz_subnet_cidr" {
   description = "CIDR para subredes públicas"
-  type        = string
+  type        = list(string)
 }
 
 variable "private_ec2_subnet_cidr" {
   description = "CIDR para subredes privadas EC2s"
-  type        = string
+  type        = list(string)
 }
 
 variable "private_rds_subnet_cidr" {
   description = "CIDR para subredes privadas RDSs"
-  type        = string
+  type        = list(string)
 }
 
 variable "azs" {
