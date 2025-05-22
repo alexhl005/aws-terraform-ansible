@@ -67,7 +67,7 @@ module "s3" {
   environment      = "prod"
   bucket_name      = "static-files-backup"
   vpc_id           = module.vpc.vpc_id
-  route_table_ids  = module.vpc.private_ec2_subnet_ids
+  route_table_id  = module.vpc.route_table_id
   attach_policy    = true
 }
 
