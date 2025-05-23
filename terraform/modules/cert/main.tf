@@ -1,20 +1,18 @@
-# 1. Obtenemos la zona DNS en Route 53 (ajusta el nombre a tu dominio)
 data "aws_route53_zone" "primary" {
-  name         = var.apache_vhost_name
+  name         = var.domain_name
   private_zone = false
 }
 
-# 2. Creamos el certificado en ACM, con validación DNS
 resource "aws_acm_certificate" "site" {
-  domain_name       = var.apache_vhost_name
+  domain_name       = var.domain_name
   validation_method = "DNS"
+  tags              = var.tags
 
   lifecycle {
     create_before_destroy = true
   }
 }
 
-# 3. Generamos el registro DNS para validar el cert
 resource "aws_route53_record" "validation" {
   for_each = {
     for dvo in aws_acm_certificate.site.domain_validation_options :
@@ -23,7 +21,7 @@ resource "aws_route53_record" "validation" {
   zone_id = data.aws_route53_zone.primary.zone_id
   name    = each.value.resource_record_name
   type    = each.value.resource_record_type
-  ttl     =  300
+  ttl     = 300
   records = [each.value.resource_record_value]
 }
 
