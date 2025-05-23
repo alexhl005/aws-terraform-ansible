@@ -6,6 +6,11 @@ output "dmz_subnet_ids" {
   value = aws_subnet.dmz[*].id
 }
 
+output "dmz_subnet_id" {
+  value = aws_subnet.dmz[0].id
+}
+
+
 output "private_ec2_subnet_ids" {
   value = aws_subnet.private_ec2[*].id
 }

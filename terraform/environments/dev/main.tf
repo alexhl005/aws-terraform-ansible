@@ -32,6 +32,7 @@ module "ec2" {
   environment        = "dev"
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.vpc.private_ec2_subnet_ids
+  dmz_subnet_id      = module.vpc.dmz_subnet_id
   ami_id             = "ami-0f9de6e2d2f067fca"  # Ubuntu 22.04
   instance_type      = "t2.micro"
   instance_count     = 3
