@@ -57,8 +57,8 @@ module "cert" {
   source = "../../modules/cert"
 
   environment = "dev"
-  domain_name = var.apache_vhost_name
   apache_vhost_name = "2asir.es"
+  domain_name = var.apache_vhost_name
 
   tags = {
     Environment = var.environment

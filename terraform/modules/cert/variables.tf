@@ -8,7 +8,7 @@ variable "domain_name" {
   type        = string
 }
 
-variable "  apache_vhost_name" {
+variable "apache_vhost_name" {
   description = "Variable para el nombre de dominio"
   type        = string
 }
