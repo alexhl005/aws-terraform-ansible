@@ -53,9 +53,13 @@ module "rds" {
   ec2_security_group_id = module.ec2.ec2_security_group_id
 }
 
-module "acm_cert" {
-  source      = "../../modules/acm_cert"
+module "cert" {
+  source = "../../modules/cert"
+
+  environment = "dev"
   domain_name = var.apache_vhost_name
+  apache_vhost_name = "2asir.es"
+
   tags = {
     Environment = var.environment
     Project     = "eCommerce"

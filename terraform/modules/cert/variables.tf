@@ -1,5 +1,15 @@
-variable "apache_vhost_name" {
-  description = "El nombre de dominio para el certificado (p.ej. devDomain.com)"
+variable "environment" {
+  description = "Nombre del entorno (dev/prod)"
+  type        = string 
+}
+
+variable "domain_name" {
+  description = "El nombre de dominio para el certificado"
+  type        = string
+}
+
+variable "  apache_vhost_name" {
+  description = "Variable para el nombre de dominio"
   type        = string
 }
 

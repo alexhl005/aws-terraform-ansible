@@ -2,7 +2,7 @@
 apache_listen_ports:
   - 80
   - 443
-apache_vhost_name: "devDomain.com"
+apache_vhost_name: "2asir.es"
 apache_ssl_cert: "/etc/ssl/certs/{{ apache_vhost_name }}.crt"
 apache_ssl_key:  "/etc/ssl/private/{{ apache_vhost_name }}.key"
 
