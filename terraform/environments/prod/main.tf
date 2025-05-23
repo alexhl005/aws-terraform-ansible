@@ -12,7 +12,7 @@ terraform {
 provider "aws" {
   region = "us-east-1"
   skip_credentials_validation = true
-  skip_metadata_api_check     = false
+  skip_metadata_api_check     = true
 }
 
 module "vpc" {
@@ -20,9 +20,9 @@ module "vpc" {
 
   environment               = "prod"
   vpc_cidr                  = "10.0.0.0/16"
-  dmz_subnet_cidr           = ["10.0.0.0/24", "10.0.1.0/24"]
-  private_ec2_subnet_cidr   = ["10.0.2.0/24", "10.0.3.0/24", "10.0.4.0/24"]
-  private_rds_subnet_cidr   = ["10.0.5.0/24", "10.0.6.0/24", "10.0.7.0/24"]
+  dmz_subnet_cidr           = ["10.0.0.0/24", "10.0.1.0/24", "10.0.2.0/24"]
+  private_ec2_subnet_cidr   = ["10.0.3.0/24", "10.0.4.0/24", "10.0.5.0/24"]
+  private_rds_subnet_cidr   = ["10.0.6.0/24", "10.0.7.0/24", "10.0.8.0/24"]
   azs                       = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
 
@@ -46,11 +46,20 @@ module "rds" {
   environment           = "prod"
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.private_rds_subnet_ids
-  db_username           = "admin_prod"
+  db_username           = "admin_dev"
   db_password           = "Root1234$"
   instance_class        = "db.c6gd.medium"
   multi_az              = true
   ec2_security_group_id = module.ec2.ec2_security_group_id
+}
+
+module "acm_cert" {
+  source      = "../../modules/acm_cert"
+  domain_name = var.apache_vhost_name
+  tags = {
+    Environment = var.environment
+    Project     = "eCommerce"
+  }
 }
 
 module "elb" {
@@ -59,7 +68,7 @@ module "elb" {
   environment         = "prod"
   vpc_id              = module.vpc.vpc_id
   public_subnet_ids   = module.vpc.dmz_subnet_ids
-  certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123"
+  certificate_arn     = module.acm_cert.certificate_arn
 }
 
 module "s3" {

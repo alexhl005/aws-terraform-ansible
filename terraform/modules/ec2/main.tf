@@ -89,47 +89,47 @@ resource "aws_instance" "web" {
 
   # Copiar scripts - Manteniendo tu estructura de carpetas
   provisioner "file" {
-    source      = "scripts/bash/backup/s3_sync.sh"
+    source      = "../../../scripts/bash/backup/s3_sync.sh"
     destination = "~/scripts/bash/backup/s3_sync.sh"
   }
 
   provisioner "file" {
-    source      = "scripts/monitoring/check_services.sh"
+    source      = "../../../scripts/monitoring/check_services.sh"
     destination = "~/scripts/monitoring/check_services.sh"
   }
 
   provisioner "file" {
-    source      = "scripts/monitoring/log_analyzer.sh"
+    source      = "../../../scripts/monitoring/log_analyzer.sh"
     destination = "~/scripts/monitoring/log_analyzer.sh"
   }
 
   provisioner "file" {
-    source      = "scripts/bash/utilities/cleanup.sh"
+    source      = "../../../scripts/bash/utilities/cleanup.sh"
     destination = "~/scripts/bash/utilities/cleanup.sh"
   }
 
   provisioner "file" {
-    source      = "scripts/bash/utilities/security_audit.sh"
+    source      = "../../../scripts/bash/utilities/security_audit.sh"
     destination = "~/scripts/bash/utilities/security_audit.sh"
   }
 
   provisioner "file" {
-    source      = "scripts/bash/utilities/weekly_maintenance.sh"
+    source      = "../../../scripts/bash/utilities/weekly_maintenance.sh"
     destination = "~/scripts/bash/utilities/weekly_maintenance.sh"
   }
 
   provisioner "file" {
-    source      = "scripts/python/cloudwatch/cloudwatch_alerts.py"
+    source      = "../../../scripts/python/cloudwatch/cloudwatch_alerts.py"
     destination = "/opt/aws-monitoring/cloudwatch_alerts.py"
   }
 
   provisioner "file" {
-    source      = "scripts/python/slack_reporter.py"
+    source      = "../../../scripts/python/slack_reporter.py"
     destination = "~/scripts/python/slack_reporter.py"
   }
 
   provisioner "file" {
-    source      = "scripts/python/cloudwatch/cloudwatch-metrics.service"
+    source      = "../../../scripts/python/cloudwatch/cloudwatch-metrics.service"
     destination = "/tmp/cloudwatch-metrics.service"
   }
 

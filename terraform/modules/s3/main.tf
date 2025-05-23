@@ -7,11 +7,6 @@ resource "aws_s3_bucket" "backup_bucket" {
   }
 }
 
-resource "aws_s3_bucket_acl" "backup_bucket" {
-  bucket = aws_s3_bucket.backup_bucket.id
-  acl    = var.acl
-}
-
 resource "aws_s3_bucket_versioning" "backup_bucket" {
   bucket = aws_s3_bucket.backup_bucket.id
   
@@ -28,13 +23,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "backup_bucket" {
       sse_algorithm = "AES256"
     }
   }
-}
-
-resource "aws_s3_bucket_policy" "backup_bucket" {
-  count = var.attach_policy ? 1 : 0
-
-  bucket = aws_s3_bucket.backup_bucket.id
-  policy = data.aws_iam_policy_document.s3_policy[0].json
 }
 
 data "aws_iam_policy_document" "s3_policy" {

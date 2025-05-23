@@ -1,4 +1,3 @@
-#test
 resource "aws_rds_cluster" "main" {
   cluster_identifier      = "${var.environment}-ecommerce-cluster"
   engine                  = "postgres"
@@ -21,11 +20,6 @@ resource "aws_rds_cluster_instance" "instances" {
   instance_class     = var.instance_class
   engine             = aws_rds_cluster.main.engine
   engine_version     = aws_rds_cluster.main.engine_version
-}
-
-resource "aws_db_subnet_group" "main" {
-  name       = "${var.environment}-rds-subnet-group"
-  subnet_ids = var.private_subnet_ids
 }
 
 resource "aws_security_group" "rds" {

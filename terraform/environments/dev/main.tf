@@ -53,13 +53,22 @@ module "rds" {
   ec2_security_group_id = module.ec2.ec2_security_group_id
 }
 
+module "acm_cert" {
+  source      = "../../modules/acm_cert"
+  domain_name = var.apache_vhost_name
+  tags = {
+    Environment = var.environment
+    Project     = "eCommerce"
+  }
+}
+
 module "elb" {
   source = "../../modules/elb"
   
   environment         = "dev"
   vpc_id              = module.vpc.vpc_id
   public_subnet_ids   = module.vpc.dmz_subnet_ids
-  certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123"
+  certificate_arn     = module.acm_cert.certificate_arn
 }
 
 module "s3" {
