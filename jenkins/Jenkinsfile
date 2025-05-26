@@ -105,9 +105,9 @@ pipeline {
                 mkdir -p terraform/environments/${ENVIRONMENT}
                 mkdir -p tfstate
                 '''
+                }
             }
         }
-
         stage('Terraform Apply') {
             steps {
                 script {
