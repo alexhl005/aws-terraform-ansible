@@ -97,8 +97,7 @@ pipeline {
             }
         }
 
-        stage {
-            stage('Prepare Workspace') {
+        stage('Prepare Workspace') {
             steps {
                 // Asegurarnos de que las carpetas existen
                 sh '''
@@ -107,7 +106,7 @@ pipeline {
                 '''
                 }
             }
-        }
+
         stage('Terraform Apply') {
             steps {
                 script {
