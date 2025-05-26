@@ -53,16 +53,16 @@ module "rds" {
   ec2_security_group_id = module.ec2.ec2_security_group_id
 }
 
- module "cert" {
-  source = "../../modules/cert"
-
-  domain_name = "2asir.es"
-
-    tags = {
-      Project = "eCommerce"
-      Env     = "prod"
-   }
- }
+# module "cert" {
+#  source = "../../modules/cert"
+#
+#  domain_name = "2asir.es"
+#
+#    tags = {
+#      Project = "eCommerce"
+#      Env     = "prod"
+#   }
+# }
 
 module "elb" {
   source = "../../modules/elb"
@@ -70,7 +70,7 @@ module "elb" {
   environment         = "prod"
   vpc_id              = module.vpc.vpc_id
   public_subnet_ids   = module.vpc.dmz_subnet_ids
-  certificate_arn     = module.cert.certificate_arn
+  #certificate_arn     = module.cert.certificate_arn
 }
 
 module "s3" {
