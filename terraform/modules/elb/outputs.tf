@@ -13,10 +13,10 @@ output "elb_listener_http_arn" {
   description = "ARN del listener HTTP"
 }
 
-output "elb_listener_https_arn" {
-  value       = aws_lb_listener.https.arn
-  description = "ARN del listener HTTPS"
-}
+#output "elb_listener_https_arn" {
+#  value       = aws_lb_listener.https.arn
+#  description = "ARN del listener HTTPS"
+#}
 
 output "target_group_web_arn" {
   value       = aws_lb_target_group.web.arn
