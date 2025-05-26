@@ -97,7 +97,7 @@ pipeline {
             }
         }
 
-        stages {
+        stage {
             stage('Prepare Workspace') {
             steps {
                 // Asegurarnos de que las carpetas existen
@@ -106,7 +106,7 @@ pipeline {
                 mkdir -p tfstate
                 '''
             }
-            }
+        }
 
         stage('Terraform Apply') {
             steps {
