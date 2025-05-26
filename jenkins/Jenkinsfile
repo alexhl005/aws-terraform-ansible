@@ -97,6 +97,17 @@ pipeline {
             }
         }
 
+        stages {
+            stage('Prepare Workspace') {
+            steps {
+                // Asegurarnos de que las carpetas existen
+                sh '''
+                mkdir -p terraform/environments/${ENVIRONMENT}
+                mkdir -p tfstate
+                '''
+            }
+            }
+
         stage('Terraform Apply') {
             steps {
                 script {
@@ -114,7 +125,13 @@ pipeline {
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
                         dir("terraform/environments/${params.ENVIRONMENT}") {
-                            sh 'terraform init -reconfigure'
+                            sh '''
+                            terraform init \
+                                -backend-config="bucket=${TF_STATE_BUCKET}" \
+                                -backend-config="key=${ENVIRONMENT}/terraform.tfstate" \
+                                -backend-config="region=${AWS_REGION}" \
+                                -reconfigure
+                            '''
                             sh 'terraform apply -input=false -auto-approve tfplan'
                         }
                     }

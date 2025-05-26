@@ -13,7 +13,7 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
-variable "certificate_arn" {
-  description = "ARN del certificado SSL de ACM para el Load Balancer"
-  type        = string
-}
+#variable "certificate_arn" {
+#  description = "ARN del certificado SSL de ACM para el Load Balancer"
+#  type        = string
+#}
