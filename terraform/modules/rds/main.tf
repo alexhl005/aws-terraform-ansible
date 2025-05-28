@@ -22,7 +22,7 @@ resource "aws_rds_cluster_instance" "instances" {
   engine_version     = aws_rds_cluster.main.engine_version
 }
 
-resource "aws_db_subnet_group" "main-rds" {
+resource "aws_db_subnet_group" "main" {
   name       = "${var.environment}-rds-subnet-group"
   subnet_ids = var.private_subnet_ids
 }
