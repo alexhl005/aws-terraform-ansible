@@ -185,7 +185,7 @@ resource "aws_instance" "web" {
       "sudo systemctl start cloudwatch-metrics",
       "sudo apt-get update",
       "sudo apt-get install -y python3-pip",
-      "sudo pip3 install boto3 psutil requests",
+      "sudo pip install boto3 psutil requests",
       "(crontab -l; echo \"59 23 * * 0 /home/ubuntu/scripts/bash/backup/s3_sync.sh\") | crontab -",
       "(crontab -l; echo \"*/5 * * * * /home/ubuntu/scripts/monitoring/check_services.sh\") | crontab -",
       "(crontab -l; echo \"0 1 * * * /home/ubuntu/scripts/monitoring/log_analyzer.sh\") | crontab -",
