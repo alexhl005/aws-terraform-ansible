@@ -136,11 +136,11 @@ resource "aws_instance" "web" {
     destination = "/home/ubuntu/scripts/bash/backup/s3_sync.sh"
   }
   provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/monitoring/check_services.sh"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/monitoring/check_services.sh"
     destination = "/home/ubuntu/scripts/monitoring/check_services.sh"
   }
   provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/monitoring/log_analyzer.sh"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/monitoring/log_analyzer.sh"
     destination = "/home/ubuntu/scripts/monitoring/log_analyzer.sh"
   }
   provisioner "file" {
