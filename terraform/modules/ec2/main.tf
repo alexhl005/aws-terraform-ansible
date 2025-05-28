@@ -1,4 +1,4 @@
-# Generar clave SSH para conexión
+# 1. Clave SSH para conexión
 resource "tls_private_key" "key_pars" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -10,12 +10,36 @@ resource "aws_key_pair" "key_pars" {
 }
 
 resource "local_file" "private_key" {
-  content  = tls_private_key.key_pars.private_key_pem
-  filename = "${path.module}/.ssh/${var.environment}-wp-key.pem"
+  content         = tls_private_key.key_pars.private_key_pem
+  filename        = "${path.module}/.ssh/${var.environment}-wp-key.pem"
   file_permission = "0600"
 }
 
-#Configuración de un bastion para gestionar las instancias
+# 2. Bastión
+resource "aws_security_group" "bastion" {
+  name        = "${var.environment}-bastion-sg"
+  description = "SSH acceso externo y hacia EC2 internas"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "SSH desde IP externa"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.bastion_allowed_cidr]
+  }
+
+  egress {
+    description = "SSH hacia red interna"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  tags = { Name = "${var.environment}-bastion-sg" }
+}
+
 resource "aws_instance" "bastion" {
   ami                         = var.ami_id
   instance_type               = "t2.micro"
@@ -23,208 +47,164 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids      = [aws_security_group.bastion.id]
   associate_public_ip_address = true
   key_name                    = aws_key_pair.key_pars.key_name
-
-  tags = {
-    Name = "${var.environment}-bastion"
-  }
+  tags = { Name = "${var.environment}-bastion" }
 }
 
-resource "aws_security_group" "bastion" {
-  name        = "${var.environment}-bastion-sg"
-  description = "SSH access desde IP externa y hacia EC2 privadas"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    description = "SSH desde tu IP"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["185.118.190.153/32"]  # Cambia esto por tu IP real si es diferente
-  }
-
-  egress {
-    description = "Permitir salida SSH hacia la red interna"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
-  }
-
-  tags = {
-    Name = "${var.environment}-bastion-sg"
-  }
-}
-
-
-# Instancia EC2
-resource "aws_instance" "web" {
-  count         = var.instance_count
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  subnet_id     = element(var.subnet_ids, count.index)
-  vpc_security_group_ids = [aws_security_group.ec2.id]
-  associate_public_ip_address = false
-  key_name      = aws_key_pair.key_pars.key_name
-
-  # Configuración inicial
-  user_data = <<-EOF
-              #!/bin/bash
-              # Crear estructura de directorios
-              mkdir -p ~/scripts/{bash,monitoring,python}
-              mkdir -p ~/scripts/bash/{backup,utilities}
-              mkdir -p /opt/aws-monitoring
-              EOF
-
-  # Conexión SSH
-    connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    private_key = tls_private_key.key_pars.private_key_pem
-    host        = self.private_ip
-
-    bastion_host        = aws_instance.bastion.public_ip
-    bastion_user        = "ubuntu"
-    bastion_private_key = tls_private_key.key_pars.private_key_pem
-  }
-
-  # Copiar scripts - Manteniendo tu estructura de carpetas
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/bash/backup/s3_sync.sh"
-    destination = "/home/ubuntu/scripts/bash/backup/s3_sync.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/monitoring/check_services.sh"
-    destination = "/home/ubuntu/scripts/monitoring/check_services.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/monitoring/log_analyzer.sh"
-    destination = "/home/ubuntu/scripts/monitoring/log_analyzer.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/bash/utilities/cleanup.sh"
-    destination = "/home/ubuntu/scripts/bash/utilities/cleanup.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/bash/utilities/security_audit.sh"
-    destination = "/home/ubuntu/scripts/bash/utilities/security_audit.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/bash/utilities/weekly_maintenance.sh"
-    destination = "/home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/python/cloudwatch/cloudwatch_alerts.py"
-    destination = "/opt/aws-monitoring/cloudwatch_alerts.py"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/python/slack_reporter.py"
-    destination = "/home/ubuntu/scripts/python/slack_reporter.py"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../../../scripts/python/cloudwatch/cloudwatch-metrics.service"
-    destination = "/tmp/cloudwatch-metrics.service"
-  }
-
-  # Configuración final vía SSH
-  provisioner "remote-exec" {
-    inline = [
-      # Establecer permisos
-      "chmod +x ~/scripts/bash/backup/s3_sync.sh",
-      "chmod +x ~/scripts/monitoring/check_services.sh",
-      "chmod +x ~/scripts/monitoring/log_analyzer.sh",
-      "chmod +x ~/scripts/bash/utilities/cleanup.sh",
-      "chmod +x ~/scripts/bash/utilities/security_audit.sh",
-      "chmod +x ~/scripts/bash/utilities/weekly_maintenance.sh",
-      "chmod +x /opt/aws-monitoring/cloudwatch_alerts.py",
-      "chmod +x ~/scripts/python/slack_reporter.py",
-
-      # Configurar servicio CloudWatch
-      "sudo mv /tmp/cloudwatch-metrics.service /etc/systemd/system/",
-      "sudo systemctl daemon-reload",
-      "sudo systemctl enable cloudwatch-metrics",
-      "sudo systemctl start cloudwatch-metrics",
-
-      # Instalar dependencias Python
-      "sudo apt-get update",
-      "sudo apt-get install -y python3-pip",
-      "sudo pip3 install boto3 psutil requests",
-
-      # Configurar cronjobs
-      "(crontab -l 2>/dev/null; echo \"59 23 * * 0 /home/ubuntu/scripts/bash/backup/s3_sync.sh\") | crontab -",
-      "(crontab -l 2>/dev/null; echo \"*/5 * * * * /home/ubuntu/scripts/monitoring/check_services.sh\") | crontab -",
-      "(crontab -l 2>/dev/null; echo \"0 1 * * * /home/ubuntu/scripts/monitoring/log_analyzer.sh\") | crontab -",
-      "(crontab -l 2>/dev/null; echo \"0 0 * * * /home/ubuntu/scripts/bash/utilities/cleanup.sh\") | crontab -",
-      "(crontab -l 2>/dev/null; echo \"0 12 * * 1 /home/ubuntu/scripts/bash/utilities/security_audit.sh\") | crontab -",
-      "(crontab -l 2>/dev/null; echo \"0 3 * * 0 /home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh\") | crontab -"
-    ]
-  }
-
-  tags = {
-    Name = "${var.environment}-web-${count.index + 1}"
-  }
-}
-
-# Guardar la IP privada para referencia
-output "instance_private_ips" {
-  value = aws_instance.web[*].private_ip
-}
-
-# Guardar el comando SSH de ejemplo
-output "ssh_command" {
-  value = format("ssh -i .ssh/%s-wp-key.pem ubuntu@%s", var.environment, aws_instance.web[0].private_ip)
-}
-
+# 3. SG para Web
 resource "aws_security_group" "ec2" {
-  vpc_id      = var.vpc_id
-  name        = "${var.environment}-ec2-sg"
-  description = "Allow HTTP/HTTPS from ELB and SSH from allowed CIDRs"
+  vpc_id = var.vpc_id
+  name   = "${var.environment}-ec2-sg"
+  description = "Allow HTTP/HTTPS from ELB and SSH from bastion"
 
   ingress {
-    description = "SSH access"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = var.ssh_allowed_cidrs  # Asegúrate de que var.ssh_allowed_cidrs esté restringido
+    description      = "SSH from bastion"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    security_groups  = [aws_security_group.bastion.id]
   }
-
-  ingress {
-    description = "SSH access"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["185.118.190.153/32"]
-  }
-
   ingress {
     description = "HTTP from ELB"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Esto está bien para tráfico web desde el ELB
+    cidr_blocks = ["0.0.0.0/0"]
   }
-
   ingress {
     description = "HTTPS from ELB"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Esto está bien para tráfico web desde el ELB
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # PostgreSQL no debe abrirse aquí, sino en el SG de RDS (en el SG de EC2 es innecesario)
-  # De todas formas, si es necesario para alguna comunicación interna entre EC2 y RDS, usa el SG de RDS.
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = { Name = "${var.environment}-ec2-sg" }
+}
+
+# 4. Web servers
+resource "aws_instance" "web" {
+  count                       = var.instance_count
+  ami                         = var.ami_id
+  instance_type               = var.instance_type
+  subnet_id                   = element(var.subnet_ids, count.index)
+  vpc_security_group_ids      = [aws_security_group.ec2.id]
+  associate_public_ip_address = false
+  key_name                    = aws_key_pair.key_pars.key_name
+
+  user_data = <<-EOF
+    #!/bin/bash
+    mkdir -p /home/ubuntu/scripts/bash/backup
+    mkdir -p /home/ubuntu/scripts/bash/utilities
+    mkdir -p /home/ubuntu/scripts/monitoring
+    mkdir -p /home/ubuntu/scripts/python/cloudwatch
+    mkdir -p /opt/aws-monitoring
+  EOF
+
+  connection {
+    type               = "ssh"
+    user               = "ubuntu"
+    private_key        = tls_private_key.key_pars.private_key_pem
+    host               = self.private_ip
+
+    bastion_host       = aws_instance.bastion.public_ip
+    bastion_user       = "ubuntu"
+    bastion_private_key= tls_private_key.key_pars.private_key_pem
+  }
+
+  # 4.1 Asegurar directorios antes de copiar
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkdir -p /home/ubuntu/scripts/bash/backup",
+      "sudo mkdir -p /home/ubuntu/scripts/bash/utilities",
+      "sudo mkdir -p /home/ubuntu/scripts/monitoring",
+      "sudo mkdir -p /home/ubuntu/scripts/python/cloudwatch",
+      "sudo mkdir -p /opt/aws-monitoring",
+      "sudo chown -R ubuntu:ubuntu /home/ubuntu/scripts /opt/aws-monitoring"
+    ]
+  }
+
+  # 4.2 Copiar scripts
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/bash/backup/s3_sync.sh"
+    destination = "/home/ubuntu/scripts/bash/backup/s3_sync.sh"
+  }
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/monitoring/check_services.sh"
+    destination = "/home/ubuntu/scripts/monitoring/check_services.sh"
+  }
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/monitoring/log_analyzer.sh"
+    destination = "/home/ubuntu/scripts/monitoring/log_analyzer.sh"
+  }
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/bash/utilities/cleanup.sh"
+    destination = "/home/ubuntu/scripts/bash/utilities/cleanup.sh"
+  }
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/bash/utilities/security_audit.sh"
+    destination = "/home/ubuntu/scripts/bash/utilities/security_audit.sh"
+  }
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/bash/utilities/weekly_maintenance.sh"
+    destination = "/home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh"
+  }
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/python/cloudwatch/cloudwatch_alerts.py"
+    destination = "/opt/aws-monitoring/cloudwatch_alerts.py"
+  }
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/python/slack_reporter.py"
+    destination = "/home/ubuntu/scripts/python/slack_reporter.py"
+  }
+  provisioner "file" {
+    source      = "${path.module}/../../../scripts/python/cloudwatch/cloudwatch-metrics.service"
+    destination = "/tmp/cloudwatch-metrics.service"
+  }
+
+  # 4.3 Pasos finales
+  provisioner "remote-exec" {
+    inline = [
+      "sudo chmod +x /home/ubuntu/scripts/bash/backup/s3_sync.sh",
+      "sudo chmod +x /home/ubuntu/scripts/monitoring/check_services.sh",
+      "sudo chmod +x /home/ubuntu/scripts/monitoring/log_analyzer.sh",
+      "sudo chmod +x /home/ubuntu/scripts/bash/utilities/cleanup.sh",
+      "sudo chmod +x /home/ubuntu/scripts/bash/utilities/security_audit.sh",
+      "sudo chmod +x /home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh",
+      "sudo chmod +x /opt/aws-monitoring/cloudwatch_alerts.py",
+      "sudo chmod +x /home/ubuntu/scripts/python/slack_reporter.py",
+      "sudo mv /tmp/cloudwatch-metrics.service /etc/systemd/system/",
+      "sudo systemctl daemon-reload",
+      "sudo systemctl enable cloudwatch-metrics",
+      "sudo systemctl start cloudwatch-metrics",
+      "sudo apt-get update",
+      "sudo apt-get install -y python3-pip",
+      "sudo pip3 install boto3 psutil requests",
+      "(crontab -l; echo \"59 23 * * 0 /home/ubuntu/scripts/bash/backup/s3_sync.sh\") | crontab -",
+      "(crontab -l; echo \"*/5 * * * * /home/ubuntu/scripts/monitoring/check_services.sh\") | crontab -",
+      "(crontab -l; echo \"0 1 * * * /home/ubuntu/scripts/monitoring/log_analyzer.sh\") | crontab -",
+      "(crontab -l; echo \"0 0 * * * /home/ubuntu/scripts/bash/utilities/cleanup.sh\") | crontab -",
+      "(crontab -l; echo \"0 12 * * 1 /home/ubuntu/scripts/bash/utilities/security_audit.sh\") | crontab -",
+      "(crontab -l; echo \"0 3 * * 0 /home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh\") | crontab -"
+    ]
+  }
+
+  tags = { Name = "${var.environment}-web-${count.index + 1}" }
+}
+
+# 5. Outputs
+output "instance_private_ips" {
+  value       = aws_instance.web[*].private_ip
+  description = "IPs privadas de los web servers"
+}
+
+output "ssh_command" {
+  value       = format("ssh -i .ssh/%s-wp-key.pem ubuntu@%s", var.environment, aws_instance.web[0].private_ip)
+  description = "Comando SSH al primer web server"
 }

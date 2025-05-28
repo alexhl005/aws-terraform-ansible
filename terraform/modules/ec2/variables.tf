@@ -45,3 +45,18 @@ variable "dmz_subnet_id" {
   description = "Subnet pública (DMZ) donde estará el bastión"
   type        = string
 }
+
+variable "dmz_subnet_id" {
+  description = "ID de uno de los subnets públicos (DMZ) donde desplegar el bastión"
+  type        = string
+}
+
+variable "bastion_allowed_cidr" {
+  description = "CIDR desde el que el bastión aceptará SSH"
+  type        = string
+}
+
+variable "vpc_cidr" {
+  description = "CIDR de la VPC para las reglas de egress del SG del bastión"
+  type        = string
+}
