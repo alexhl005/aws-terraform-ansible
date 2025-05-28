@@ -18,7 +18,7 @@ provider "aws" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  environment               = "prod"
+  environment               = "dev"
   vpc_cidr                  = "10.0.0.0/16"
   dmz_subnet_cidr           = ["10.0.0.0/24", "10.0.1.0/24", "10.0.2.0/24"]
   private_ec2_subnet_cidr   = ["10.0.3.0/24", "10.0.4.0/24", "10.0.5.0/24"]
@@ -29,7 +29,7 @@ module "vpc" {
 module "ec2" {
   source = "../../modules/ec2"
 
-  environment        = "prod"
+  environment        = "dev"
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.vpc.private_ec2_subnet_ids
   dmz_subnet_id      = module.vpc.dmz_subnet_id
@@ -38,12 +38,15 @@ module "ec2" {
   instance_count     = 3
   ssh_allowed_cidrs  = ["10.0.0.0/16"]
   key_name           = "vockey"
+
+  bastion_allowed_cidr = "185.118.190.153/32"
+  vpc_cidr             = module.vpc.vpc_cidr 
 }
 
 module "rds" {
   source = "../../modules/rds"
 
-  environment           = "prod"
+  environment           = "dev"
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.private_rds_subnet_ids
   db_username           = "admin_dev"
@@ -60,14 +63,14 @@ module "rds" {
 #
 #    tags = {
 #      Project = "eCommerce"
-#      Env     = "prod"
+#      Env     = "dev"
 #   }
 # }
 
 module "elb" {
   source = "../../modules/elb"
   
-  environment         = "prod"
+  environment         = "dev"
   vpc_id              = module.vpc.vpc_id
   public_subnet_ids   = module.vpc.dmz_subnet_ids
   #certificate_arn     = module.cert.certificate_arn
@@ -76,7 +79,7 @@ module "elb" {
 module "s3" {
   source = "../../modules/s3"
 
-  environment      = "prod"
+  environment      = "dev"
   bucket_name      = "static-files-backup"
   vpc_id           = module.vpc.vpc_id
   route_table_id  = module.vpc.route_table_id

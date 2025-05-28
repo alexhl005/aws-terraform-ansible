@@ -38,6 +38,9 @@ module "ec2" {
   instance_count     = 3
   ssh_allowed_cidrs  = ["10.0.0.0/16"]
   key_name           = "vockey"
+
+  bastion_allowed_cidr = "185.118.190.153/32"
+  vpc_cidr             = module.vpc.vpc_cidr 
 }
 
 module "rds" {
