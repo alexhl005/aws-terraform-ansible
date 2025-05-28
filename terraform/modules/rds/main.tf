@@ -17,14 +17,14 @@ resource "aws_rds_cluster" "main" {
   deletion_protection         = false
 }
 
-resource "aws_rds_cluster_instance" "instances" {
-  count              = var.multi_az ? 2 : 1
-  identifier         = "${var.environment}-ecommerce-instance-${count.index}"
-  cluster_identifier = aws_rds_cluster.main.id
-  instance_class     = var.instance_class
-  engine             = aws_rds_cluster.main.engine
-  engine_version     = aws_rds_cluster.main.engine_version
-}
+#resource "aws_rds_cluster_instance" "instances" {
+#  count              = var.multi_az ? 2 : 1
+#  identifier         = "${var.environment}-ecommerce-instance-${count.index}"
+#  cluster_identifier = aws_rds_cluster.main.id
+#  instance_class     = var.instance_class
+#  engine             = aws_rds_cluster.main.engine
+#  engine_version     = aws_rds_cluster.main.engine_version
+#}
 
 resource "aws_db_subnet_group" "main" {
   name       = "${var.environment}-rds-subnet-group"
