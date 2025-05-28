@@ -51,7 +51,7 @@ module "rds" {
   private_subnet_ids    = module.vpc.private_rds_subnet_ids
   db_username           = "admin_dev"
   db_password           = "Root1234$"
-  instance_class        = "db.c6gd.medium"
+  instance_class        = "db.md5.large"
   multi_az              = true
   ec2_security_group_id = module.ec2.ec2_security_group_id
 }
