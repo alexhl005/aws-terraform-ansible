@@ -5,6 +5,7 @@ resource "aws_rds_cluster" "main" {
   database_name           = var.db_name
   master_username         = var.db_username
   master_password         = var.db_password
+  allocated_storage        = var.allocated_storage
   backup_retention_period = 7
   preferred_backup_window = "07:00-09:00"
   vpc_security_group_ids  = [aws_security_group.rds.id]

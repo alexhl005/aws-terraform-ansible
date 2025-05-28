@@ -46,3 +46,8 @@ variable "ec2_security_group_id" {
   description = "ID del security group de EC2 que puede acceder al RDS"
   type        = string
 }
+
+variable "allocated_storage" {
+  description = "Almacenamiento asignado para la base de datos"
+  type        = number
+}
