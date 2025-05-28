@@ -132,39 +132,39 @@ resource "aws_instance" "web" {
 
   # 4.2 Copiar scripts
   provisioner "file" {
-    source      = "../../../scripts/bash/backup/s3_sync.sh"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/backup/s3_sync.sh"
     destination = "/home/ubuntu/scripts/bash/backup/s3_sync.sh"
   }
   provisioner "file" {
-    source      = "../../../scripts/monitoring/check_services.sh"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/monitoring/check_services.sh"
     destination = "/home/ubuntu/scripts/monitoring/check_services.sh"
   }
   provisioner "file" {
-    source      = "../../../scripts/monitoring/log_analyzer.sh"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/monitoring/log_analyzer.sh"
     destination = "/home/ubuntu/scripts/monitoring/log_analyzer.sh"
   }
   provisioner "file" {
-    source      = "../../../scripts/bash/utilities/cleanup.sh"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/utilities/cleanup.sh"
     destination = "/home/ubuntu/scripts/bash/utilities/cleanup.sh"
   }
   provisioner "file" {
-    source      = "../../../scripts/bash/utilities/security_audit.sh"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/utilities/security_audit.sh"
     destination = "/home/ubuntu/scripts/bash/utilities/security_audit.sh"
   }
   provisioner "file" {
-    source      = "../../../scripts/bash/utilities/weekly_maintenance.sh"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/utilities/weekly_maintenance.sh"
     destination = "/home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh"
   }
   provisioner "file" {
-    source      = "../../../scripts/python/cloudwatch/cloudwatch_alerts.py"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/python/cloudwatch/cloudwatch_alerts.py"
     destination = "/opt/aws-monitoring/cloudwatch_alerts.py"
   }
   provisioner "file" {
-    source      = "../../../scripts/python/slack_reporter.py"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/python/slack_reporter.py"
     destination = "/home/ubuntu/scripts/python/slack_reporter.py"
   }
   provisioner "file" {
-    source      = "../../../scripts/python/cloudwatch/cloudwatch-metrics.service"
+    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/python/cloudwatch/cloudwatch-metrics.service"
     destination = "/tmp/cloudwatch-metrics.service"
   }
 
