@@ -20,6 +20,3 @@ LOG_FILE="/var/log/weekly_maintenance.log"
   
   echo "=== FIN MANTENIMIENTO $(date) ==="
 } >> $LOG_FILE 2>&1
-
-# Notificación
-/usr/bin/python3 "$(dirname "$0")/../../python/monitoring/slack_reporter.py" "Mantenimiento semanal completado"

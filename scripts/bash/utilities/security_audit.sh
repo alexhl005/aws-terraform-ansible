@@ -39,11 +39,5 @@ ALERT_COUNT=0
   echo "=== RESUMEN ==="
   echo "Total alertas: $ALERT_COUNT"
   
-  if [ $ALERT_COUNT -ge $ALERT_THRESHOLD ]; then
-    echo "🚨 Enviando alerta de seguridad"
-    /usr/bin/python3 ../python/monitoring/slack_reporter.py \
-      "🚨 Auditoría detectó $ALERT_COUNT problemas de seguridad"
-  fi
-  
   echo "=== FIN AUDITORIA $(date) ==="
 } >> $LOG_FILE 2>&1
