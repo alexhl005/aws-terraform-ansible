@@ -48,6 +48,13 @@ resource "aws_instance" "bastion" {
   associate_public_ip_address = true
   key_name                    = aws_key_pair.key_pars.key_name
   tags = { Name = "${var.environment}-bastion" }
+
+  user_data = <<-EOF
+    #!/bin/bash
+    sudo apt-add-repository ppa:ansible/ansible
+    sudo apt update
+    sudo apt install ansible -y
+  EOF
 }
 
 # 3. SG para Web
@@ -127,71 +134,6 @@ resource "aws_instance" "web" {
       "sudo mkdir -p /home/ubuntu/scripts/python/cloudwatch",
       "sudo mkdir -p /opt/aws-monitoring",
       "sudo chown -R ubuntu:ubuntu /home/ubuntu/scripts /opt/aws-monitoring"
-    ]
-  }
-
-  # 4.2 Copiar scripts
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/backup/s3_sync.sh"
-    destination = "/home/ubuntu/scripts/bash/backup/s3_sync.sh"
-  }
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/monitoring/check_services.sh"
-    destination = "/home/ubuntu/scripts/monitoring/check_services.sh"
-  }
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/monitoring/log_analyzer.sh"
-    destination = "/home/ubuntu/scripts/monitoring/log_analyzer.sh"
-  }
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/utilities/cleanup.sh"
-    destination = "/home/ubuntu/scripts/bash/utilities/cleanup.sh"
-  }
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/utilities/security_audit.sh"
-    destination = "/home/ubuntu/scripts/bash/utilities/security_audit.sh"
-  }
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/bash/utilities/weekly_maintenance.sh"
-    destination = "/home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh"
-  }
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/python/cloudwatch/cloudwatch_alerts.py"
-    destination = "/opt/aws-monitoring/cloudwatch_alerts.py"
-  }
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/python/slack_reporter.py"
-    destination = "/home/ubuntu/scripts/python/slack_reporter.py"
-  }
-  provisioner "file" {
-    source      = "/var/lib/jenkins/workspace/aws-terraform-ansible/scripts/python/cloudwatch/cloudwatch-metrics.service"
-    destination = "/tmp/cloudwatch-metrics.service"
-  }
-
-  # 4.3 Pasos finales
-  provisioner "remote-exec" {
-    inline = [
-      "sudo chmod +x /home/ubuntu/scripts/bash/backup/s3_sync.sh",
-      "sudo chmod +x /home/ubuntu/scripts/monitoring/check_services.sh",
-      "sudo chmod +x /home/ubuntu/scripts/monitoring/log_analyzer.sh",
-      "sudo chmod +x /home/ubuntu/scripts/bash/utilities/cleanup.sh",
-      "sudo chmod +x /home/ubuntu/scripts/bash/utilities/security_audit.sh",
-      "sudo chmod +x /home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh",
-      "sudo chmod +x /opt/aws-monitoring/cloudwatch_alerts.py",
-      "sudo chmod +x /home/ubuntu/scripts/python/slack_reporter.py",
-      "sudo mv /tmp/cloudwatch-metrics.service /etc/systemd/system/",
-      "sudo systemctl daemon-reload",
-      "sudo systemctl enable cloudwatch-metrics",
-      "sudo systemctl start cloudwatch-metrics",
-      "sudo apt-get update",
-      "sudo apt-get install -y python3-pip",
-      "sudo pip install boto3 psutil requests",
-      "(crontab -l; echo \"59 23 * * 0 /home/ubuntu/scripts/bash/backup/s3_sync.sh\") | crontab -",
-      "(crontab -l; echo \"*/5 * * * * /home/ubuntu/scripts/monitoring/check_services.sh\") | crontab -",
-      "(crontab -l; echo \"0 1 * * * /home/ubuntu/scripts/monitoring/log_analyzer.sh\") | crontab -",
-      "(crontab -l; echo \"0 0 * * * /home/ubuntu/scripts/bash/utilities/cleanup.sh\") | crontab -",
-      "(crontab -l; echo \"0 12 * * 1 /home/ubuntu/scripts/bash/utilities/security_audit.sh\") | crontab -",
-      "(crontab -l; echo \"0 3 * * 0 /home/ubuntu/scripts/bash/utilities/weekly_maintenance.sh\") | crontab -"
     ]
   }
 

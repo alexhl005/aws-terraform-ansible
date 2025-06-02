@@ -2,7 +2,7 @@
 # Sync WordPress uploads to S3 with directory structure preservation
 
 WP_UPLOADS_DIR="/var/www/html/wp-content/uploads"
-S3_BUCKET="s3://your-backup-bucket"
+S3_BUCKET="bucket_arn"
 LOG_FILE="/var/log/wp_uploads_s3_sync.log"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
