@@ -297,7 +297,7 @@ pipeline {
                             -r ${ANSIBLE_DIR} ubuntu@${bastionIp}:/home/ubuntu/ansible
                     """
                     
-                    // 4) Invocar ansible-playbook desde el bastión (con ProxyJump no hace falta, porque estamos ya yendo directo al bastión)
+                    // 4) Invocar ansible-playbook desde el bastión (con ProxyJump no hace falta, porque estamos ya yendo directo al bastión.)
                     sh """
                         ssh -o StrictHostKeyChecking=no -i /opt/keys/aws-key-${params.ENVIRONMENT}.pem ubuntu@${bastionIp} \\
                             "cd ansible && ansible-playbook -i inventories/${params.ENVIRONMENT}/hosts playbooks/wordpress.yml \\
