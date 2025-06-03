@@ -202,7 +202,7 @@ pipeline {
                     def privateKey = "modules/ec2/.ssh/${params.ENVIRONMENT}-wp-key.pem"
 
                     // 6. Copiar y configurar en cada webserver a través del bastión
-                    sh """
+                    sh '''
                         #!/bin/bash
                         set -e
 
@@ -270,7 +270,7 @@ pipeline {
 
                         echo ""
                         done
-                    """
+                    '''
                 }
             }
         }
