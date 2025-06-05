@@ -183,13 +183,13 @@ pipeline {
                     // 2. Actualizar el archivo de variables de Ansible con el endpoint del cluster
                     def phpConfigFile = "${env.ANSIBLE_DIR}/group_vars/webservers.yml"
                     def phpContent    = readFile(file: phpConfigFile)
-                    phpContent         = phpContent.replace("(cluster_endpoint)", tfOutputs.cluster_endpoint.value)
+                    phpContent        = phpContent.replace("(cluster_endpoint)", tfOutputs.cluster_endpoint.value)
                     writeFile(file: phpConfigFile, text: phpContent)
 
                     // 3. Actualizar el script bash con el bucket ARN
                     def bashScriptFile = "scripts/bash/backup/s3_sync.sh"
                     def bashContent    = readFile(file: bashScriptFile)
-                    bashContent         = bashContent.replace("(bucket_arn)", tfOutputs.bucket_arn.value)
+                    bashContent        = bashContent.replace("(bucket_arn)", tfOutputs.bucket_arn.value)
                     writeFile(file: bashScriptFile, text: bashContent)
 
                     // 4. Confirmar los cambios en consola
