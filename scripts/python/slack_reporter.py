@@ -10,7 +10,7 @@ import requests
 from datetime import datetime
 
 # Configuración - Cambia estos valores
-SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
+SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
 SITE_NAME = "Mi WordPress"
 ENVIRONMENT = "prod"
 

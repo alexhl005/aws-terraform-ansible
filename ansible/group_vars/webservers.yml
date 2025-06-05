@@ -45,5 +45,5 @@ bastion_host:                        "{{ bastion_public_ip.value }}"
 ansible_ssh_common_args:            "-o ProxyJump={{ bastion_user }}@{{ bastion_host }}"
 
 # Infraestructura
-db_host:                             "{{ cluster_endpoint }}"
-elb_dns:                             "{{ elb_dns_name.value }}"
+db_host:                             "cluster_endpoint"
+elb_dns:                             "elb_dns_name.value"
