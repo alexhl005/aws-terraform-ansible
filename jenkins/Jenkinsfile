@@ -142,6 +142,7 @@ pipeline {
             steps {
                 dir("terraform/environments/${params.ENVIRONMENT}") {
                     sh """
+                    mkdir ../../tf_outputs
                     terraform output -json > ../../tf_outputs/tf_outputs_${params.ENVIRONMENT}.json
                     """
                 }
