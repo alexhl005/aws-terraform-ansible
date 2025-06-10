@@ -138,21 +138,22 @@ pipeline {
             }
         }
 
-//        stage('Generate Terraform Outputs') {
-//            steps {
-//                script {
-//                    // Nos aseguramos de que existe la carpeta tf_outputs en el root
-//                    sh "mkdir -p ${WORKSPACE}/tf_outputs"
-//
-                    //// Ejecutamos terraform output desde dentro de terraform/environments/ENVIRONMENT,
-//                    // pero redirigimos la salida al path correcto en el root del workspace:
-//                    sh """
-//                    cd terraform/environments/${params.ENVIRONMENT}
-                    //terraform output -json > ${WORKSPACE}/tf_outputs/tf_outputs_${params.ENVIRONMENT}.json
-//                    """
-//                }
-//            }
-//        }
+        stage('Generate Terraform Outputs') {
+            steps {
+                script {
+                    // Nos aseguramos de que existe la carpeta tf_outputs en el root
+                    sh "mkdir -p ${WORKSPACE}/tf_outputs"
+
+                    // Ejecutamos terraform output desde dentro de terraform/environments/ENVIRONMENT,
+                    // pero redirigimos la salida al path correcto en el root del workspace:
+                    sh """
+                    cd terraform/environments/${params.ENVIRONMENT}
+                    touch tf_outputs_${params.ENVIRONMENT}.json
+                    terraform output -json > ${WORKSPACE}/tf_outputs/tf_outputs_${params.ENVIRONMENT}.json
+                    """
+                }
+            }
+        }
 //
 //
 //        stage('Configure Ansible Inventory') {
@@ -318,10 +319,10 @@ pipeline {
 
 
     post {
-//        always {
-//            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
-//            cleanWs()
-//        }
+        always {
+            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
+            cleanWs()
+        }
         failure {
             script {
                 slackSend channel: '#infra-alerts',
