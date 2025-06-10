@@ -8,7 +8,7 @@ pipeline {
         AWS_REGION = "us-east-1"
         AWS_CREDENTIALS_ID = 'aws-cli-token'
         ANSIBLE_DIR = "../ansible"
-        TF_STATE_BUCKET = "tf-state-bucket-${params.ENVIRONMENT}-ahl"
+        TF_STATE_BUCKET = "tf-state-bucket-${params.ENVIRONMENT}"
         JENKINS_TRIGGER_TOKEN = "JENKINS_TRIGGER_TOKEN"
         SLACK_CHANNEL = '#infra-alerts'
         SLACK_TOKEN_CREDENTIAL_ID = 'slack-token'
@@ -154,31 +154,31 @@ pipeline {
                 }
             }
         }
-//
-//
-//        stage('Configure Ansible Inventory') {
-//            steps {
-//                script {
-                    //def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
-//                    def webIps = tfOutputs.ec2_instances.value.join('\n')
-//                    def bastionIp = tfOutputs.bastion_public_ip.value
-//
-//                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", 
-//                        text: """
-//        [webservers]
-//        ${webIps}
-//
-//        [webservers:vars]
-//        ansible_user=ubuntu
-//        ansible_ssh_private_key_file=../modules/ec2/.ssh/${params.ENVIRONMENT}-wp-key.pem
-//        ansible_ssh_common_args='-o ProxyJump=ubuntu@${bastionIp}'
-//        db_host=${tfOutputs.rds_endpoint.value}
-//        elb_dns=${tfOutputs.elb_dns_name.value}
-//        """
-//                }
-//            }
-//        }
-//
+
+
+        stage('Configure Ansible Inventory') {
+            steps {
+                script {
+                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
+                    def webIps = tfOutputs.ec2_instances.value.join('\n')
+                    def bastionIp = tfOutputs.bastion_public_ip.value
+
+                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", 
+                        text: """
+        [webservers]
+        ${webIps}
+
+        [webservers:vars]
+        ansible_user=ubuntu
+        ansible_ssh_private_key_file=../modules/ec2/.ssh/${params.ENVIRONMENT}-wp-key.pem
+        ansible_ssh_common_args='-o ProxyJump=ubuntu@${bastionIp}'
+        db_host=${tfOutputs.rds_endpoint.value}
+        elb_dns=${tfOutputs.elb_dns_name.value}
+        """
+                }
+            }
+        }
+
 //        stage('Update Configuration Files') {
 //            steps {
 //                script {
