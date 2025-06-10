@@ -53,7 +53,7 @@ module "rds" {
   db_password           = "Root1234$"
   instance_class        = "db.m5d.large"
   allocated_storage     = "400"
-  multi_az              = false
+  multi_az              = true
   ec2_security_group_id = module.ec2.ec2_security_group_id
 }
 

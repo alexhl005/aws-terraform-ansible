@@ -1,47 +1,47 @@
-resource "aws_db_instance" "main" {
-  identifier              = "${var.environment}-ecommerce-db"
-  engine                  = "postgres"
-  engine_version          = "17.2"
-  instance_class          = var.instance_class
-  db_name                 = var.db_name
-  username                = var.db_username
-  password                = var.db_password
-  allocated_storage       = var.allocated_storage
-  iops                    = 3000
-  storage_type            = "io2"
-  backup_retention_period = 7
-
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-
-  skip_final_snapshot   = true
-  deletion_protection   = false
-  publicly_accessible   = false
-
-  tags = {
-    Environment = var.environment
-  }
-}
-
-
-#resource "aws_rds_cluster" "main" {
-#  cluster_identifier          = "${var.environment}-ecommerce-cluster"
-#  engine                      = "postgres"
-#  engine_version              = "17.2"
-#  database_name               = var.db_name
-#  master_username             = var.db_username
-#  master_password             = var.db_password
-#  allocated_storage           = var.allocated_storage
-#  db_cluster_instance_class   = var.instance_class
-#  iops                        = 3000
-#  storage_type                = "io2"
-#  backup_retention_period     = 7
-#  preferred_backup_window     = "07:00-09:00"
-#  vpc_security_group_ids      = [aws_security_group.rds.id]
-#  db_subnet_group_name        = aws_db_subnet_group.main.name
-#  skip_final_snapshot         = true
-#  deletion_protection         = false
+#resource "aws_db_instance" "main" {
+#  identifier              = "${var.environment}-ecommerce-db"
+#  engine                  = "postgres"
+#  engine_version          = "17.2"
+#  instance_class          = var.instance_class
+#  db_name                 = var.db_name
+#  username                = var.db_username
+#  password                = var.db_password
+#  allocated_storage       = var.allocated_storage
+#  iops                    = 3000
+#  storage_type            = "io2"
+#  backup_retention_period = 7
+#
+#  vpc_security_group_ids = [aws_security_group.rds.id]
+#  db_subnet_group_name   = aws_db_subnet_group.main.name
+#
+#  skip_final_snapshot   = true
+#  deletion_protection   = false
+#  publicly_accessible   = false
+#
+#  tags = {
+#    Environment = var.environment
+#  }
 #}
+
+
+resource "aws_rds_cluster" "main" {
+  cluster_identifier          = "${var.environment}-ecommerce-cluster"
+  engine                      = "postgres"
+  engine_version              = "17.2"
+  database_name               = var.db_name
+  master_username             = var.db_username
+  master_password             = var.db_password
+  allocated_storage           = var.allocated_storage
+  db_cluster_instance_class   = var.instance_class
+  iops                        = 3000
+  storage_type                = "io2"
+  backup_retention_period     = 7
+  preferred_backup_window     = "07:00-09:00"
+  vpc_security_group_ids      = [aws_security_group.rds.id]
+  db_subnet_group_name        = aws_db_subnet_group.main.name
+  skip_final_snapshot         = true
+  deletion_protection         = false
+}
 
 #resource "aws_rds_cluster_instance" "instances" {
 #  count              = var.multi_az ? 2 : 1
