@@ -8,7 +8,7 @@ pipeline {
         AWS_REGION = "us-east-1"
         AWS_CREDENTIALS_ID = 'aws-cli-token'
         ANSIBLE_DIR = "../ansible"
-        TF_STATE_BUCKET = "tf-state-bucket-${params.ENVIRONMENT}"
+        TF_STATE_BUCKET = "tf-state-bucket-${params.ENVIRONMENT}-ahl"
         JENKINS_TRIGGER_TOKEN = "JENKINS_TRIGGER_TOKEN"
         SLACK_CHANNEL = '#infra-alerts'
         SLACK_TOKEN_CREDENTIAL_ID = 'slack-token'
