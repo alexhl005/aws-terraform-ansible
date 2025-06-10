@@ -318,10 +318,10 @@ pipeline {
 
 
     post {
-//er        always {
-//er            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
-//er            cleanWs()
-//er        }
+//        always {
+//            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
+//            cleanWs()
+//        }
         failure {
             script {
                 slackSend channel: '#infra-alerts',
