@@ -159,15 +159,21 @@ pipeline {
         stage('Configure Ansible Inventory') {
             steps {
                 script {
+                    // Leer los outputs de Terraform
                     def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
-                    def webIps = tfOutputs.ec2_instances.value.join('\n')
+                    def ipsList  = tfOutputs.ec2_instances.value
                     def bastionIp = tfOutputs.bastion_public_ip.value
 
-                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", 
-                        text: """
-        [webservers]
-        ${webIps}
+                    // Construir lista de hosts sin usar métodos prohibidos
+                    def hosts = ""
+                    for (ip in ipsList) {
+                        hosts += ip + "\n"
+                    }
 
+                    // Escribir el inventario
+                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", text: """
+        [webservers]
+        ${hosts}
         [webservers:vars]
         ansible_user=ubuntu
         ansible_ssh_private_key_file=../modules/ec2/.ssh/${params.ENVIRONMENT}-wp-key.pem
