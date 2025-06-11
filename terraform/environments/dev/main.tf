@@ -126,7 +126,7 @@ output "bastion_public_ip" {
 
 output "rds_endpoint" {
   description = "Endpoint de la base de datos Postgres"
-  value       = module.rds.db_instance_address
+  value       = module.rds.rds_endpoint
 }
 
 output "s3_bucket_name" {
