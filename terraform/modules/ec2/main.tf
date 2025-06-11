@@ -49,12 +49,12 @@ resource "aws_instance" "bastion" {
   key_name                    = aws_key_pair.key_pars.key_name
   tags = { Name = "${var.environment}-bastion" }
 
-  user_data = <<-EOF
-    #!/bin/bash
-    sudo apt-add-repository ppa:ansible/ansible
-    sudo apt update
-    sudo apt install ansible bc -y
-  EOF
+#  user_data = <<-EOF
+#    #!/bin/bash
+#    sudo apt-add-repository ppa:ansible/ansible
+#    sudo apt update
+#    sudo apt install ansible bc -y
+#  EOF
 }
 
 # 3. SG para Web
@@ -105,14 +105,14 @@ resource "aws_instance" "web" {
   associate_public_ip_address = false
   key_name                    = aws_key_pair.key_pars.key_name
 
-  user_data = <<-EOF
-    #!/bin/bash
-    mkdir -p /home/ubuntu/scripts/bash/backup
-    mkdir -p /home/ubuntu/scripts/bash/utilities
-    mkdir -p /home/ubuntu/scripts/monitoring
-    mkdir -p /home/ubuntu/scripts/python/cloudwatch
-    mkdir -p /opt/aws-monitoring
-  EOF
+#  user_data = <<-EOF
+#    #!/bin/bash
+#    mkdir -p /home/ubuntu/scripts/bash/backup
+#    mkdir -p /home/ubuntu/scripts/bash/utilities
+#    mkdir -p /home/ubuntu/scripts/monitoring
+#    mkdir -p /home/ubuntu/scripts/python/cloudwatch
+#    mkdir -p /opt/aws-monitoring
+#  EOF
 
   connection {
     type               = "ssh"
@@ -126,18 +126,18 @@ resource "aws_instance" "web" {
   }
 
   # 4.1 Asegurar directorios antes de copiar
-  provisioner "remote-exec" {
-    inline = [
-      "sudo mkdir -p /home/ubuntu/scripts/bash/backup",
-      "sudo mkdir -p /home/ubuntu/scripts/bash/utilities",
-      "sudo mkdir -p /home/ubuntu/scripts/monitoring",
-      "sudo mkdir -p /home/ubuntu/scripts/python/cloudwatch",
-      "sudo mkdir -p /opt/aws-monitoring",
-      "sudo chown -R ubuntu:ubuntu /home/ubuntu/scripts /opt/aws-monitoring"
-    ]
-  }
-
-  tags = { Name = "${var.environment}-web-${count.index + 1}" }
+#  provisioner "remote-exec" {
+#    inline = [
+#      "sudo mkdir -p /home/ubuntu/scripts/bash/backup",
+#      "sudo mkdir -p /home/ubuntu/scripts/bash/utilities",
+#      "sudo mkdir -p /home/ubuntu/scripts/monitoring",
+#      "sudo mkdir -p /home/ubuntu/scripts/python/cloudwatch",
+#      "sudo mkdir -p /opt/aws-monitoring",
+#      "sudo chown -R ubuntu:ubuntu /home/ubuntu/scripts /opt/aws-monitoring"
+#    ]
+#  }
+#
+#  tags = { Name = "${var.environment}-web-${count.index + 1}" }
 }
 
 # 5. Outputs
