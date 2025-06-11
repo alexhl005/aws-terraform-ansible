@@ -52,7 +52,7 @@ module "rds" {
   db_username           = "admin_dev"
   db_password           = "Root1234$"
   instance_class        = "db.t3.micro"
-  allocated_storage     = "20"
+  allocated_storage     = "400"
   multi_az              = false
   ec2_security_group_id = module.ec2.ec2_security_group_id
 }

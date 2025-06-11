@@ -137,7 +137,7 @@ resource "aws_instance" "web" {
 #    ]
 #  }
 #
-#  tags = { Name = "${var.environment}-web-${count.index + 1}" }
+  tags = { Name = "${var.environment}-web-${count.index + 1}" }
 }
 
 # 5. Outputs
