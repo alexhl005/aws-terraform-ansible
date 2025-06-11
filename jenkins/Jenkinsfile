@@ -131,7 +131,13 @@ pipeline {
                                 -backend-config="region=${AWS_REGION}" \
                                 -reconfigure
                             '''
-                            sh 'terraform apply -input=false -auto-approve tfplan'
+                            try {
+                                sh 'terraform apply -input=false tfplan'
+                            } catch (err) {
+                                echo "Plan desfasado, regenerando plan..."
+                                sh 'terraform plan -out=tfplan'
+                                sh 'terraform apply -input=false tfplan'
+                            }
                         }
                     }
                 }
