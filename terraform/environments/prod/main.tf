@@ -87,73 +87,64 @@ module "s3" {
   attach_policy    = true
 }
 
-output "rds_endpoint" {
-  description = "Endpoint de la base de datos Postgres"
-  value       = aws_db_instance.main.address
-}
-
-#output "rds_endpoint" {
-#  value = aws_rds_cluster.main.endpoint
-#}
-#
-#output "reader_endpoint" {
-#  value = aws_rds_cluster.main.reader_endpoint
-#}
-
-output "instance_ids" {
-  value = aws_instance.web[*].id
-}
-
-output "ec2_security_group_id" {
-  value = aws_security_group.ec2.id
-}
-
-output "bastion_public_ip" {
-  value       = aws_instance.bastion.public_ip
-  description = "IP pública del bastión SSH"
-}
-
-output "bucket_name" {
-  value       = aws_s3_bucket.backup_bucket.bucket
-  description = "Name of the created S3 bucket"
-}
-
-output "bucket_arn" {
-  value       = aws_s3_bucket.backup_bucket.arn
-  description = "ARN of the created S3 bucket"
-}
-
-output "vpc_endpoint_id" {
-  value       = aws_vpc_endpoint.s3.id
-  description = "ID of the VPC endpoint for S3"
-}
-
-variable "route_table_id" {
-  description = "ID de la tabla de rutas para el endpoint S3"
-  type        = string
-}
+#—— Outputs ——————————————————————————————————————————
 
 output "vpc_id" {
-  value = aws_vpc.main.id
+  description = "ID de la VPC"
+  value       = module.vpc.vpc_id
 }
 
 output "dmz_subnet_ids" {
-  value = aws_subnet.dmz[*].id
-}
-
-output "dmz_subnet_id" {
-  value = aws_subnet.dmz[0].id
+  description = "IDs de las subnets públicas (DMZ)"
+  value       = module.vpc.dmz_subnet_ids
 }
 
 output "private_ec2_subnet_ids" {
-  value = aws_subnet.private_ec2[*].id
+  description = "IDs de las subnets privadas para EC2"
+  value       = module.vpc.private_ec2_subnet_ids
 }
 
 output "private_rds_subnet_ids" {
-  value = aws_subnet.private_rds[*].id
+  description = "IDs de las subnets privadas para RDS"
+  value       = module.vpc.private_rds_subnet_ids
 }
 
-output "route_table_id" {
-  description = "ID de la tabla de rutas principal"
-  value       = aws_route_table.main.id
+output "instance_ids" {
+  description = "IDs de las instancias EC2"
+  value       = module.ec2.instance_ids
+}
+
+output "ec2_security_group_id" {
+  description = "ID del Security Group de EC2"
+  value       = module.ec2.ec2_security_group_id
+}
+
+output "bastion_public_ip" {
+  description = "IP pública del bastión"
+  value       = module.ec2.bastion_public_ip
+}
+
+output "rds_endpoint" {
+  description = "Endpoint de la base de datos Postgres"
+  value       = module.rds.db_instance_address
+}
+
+output "s3_bucket_name" {
+  description = "Nombre del bucket S3"
+  value       = module.s3.bucket_name
+}
+
+output "s3_bucket_arn" {
+  description = "ARN del bucket S3"
+  value       = module.s3.bucket_arn
+}
+
+output "s3_vpc_endpoint_id" {
+  description = "ID del endpoint VPC para S3"
+  value       = module.s3.vpc_endpoint_id
+}
+
+output "elb_dns_name" {
+  description = "DNS Name del ELB"
+  value       = module.elb.elb_dns_name
 }
