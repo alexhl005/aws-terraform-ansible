@@ -88,25 +88,72 @@ module "s3" {
 }
 
 output "rds_endpoint" {
-  value       = module.rds.cluster_endpoint
-  description = "Endpoint del cluster RDS"
+  description = "Endpoint de la base de datos Postgres"
+  value       = aws_db_instance.main.address
 }
 
-output "ec2_instances" {
-  value = module.ec2.instance_ids
+#output "rds_endpoint" {
+#  value = aws_rds_cluster.main.endpoint
+#}
+#
+#output "reader_endpoint" {
+#  value = aws_rds_cluster.main.reader_endpoint
+#}
+
+output "instance_ids" {
+  value = aws_instance.web[*].id
 }
 
-output "s3_bucket_name" {
-  value       = module.s3.bucket_name
-  description = "Name of the S3 static files bucket"
+output "ec2_security_group_id" {
+  value = aws_security_group.ec2.id
 }
 
-output "s3_bucket_arn" {
-  value       = module.s3.bucket_arn
-  description = "ARN of the S3 static files bucket"
+output "bastion_public_ip" {
+  value       = aws_instance.bastion.public_ip
+  description = "IP pública del bastión SSH"
 }
 
-output "s3_vpc_endpoint_id" {
-  value       = module.s3.vpc_endpoint_id
+output "bucket_name" {
+  value       = aws_s3_bucket.backup_bucket.bucket
+  description = "Name of the created S3 bucket"
+}
+
+output "bucket_arn" {
+  value       = aws_s3_bucket.backup_bucket.arn
+  description = "ARN of the created S3 bucket"
+}
+
+output "vpc_endpoint_id" {
+  value       = aws_vpc_endpoint.s3.id
   description = "ID of the VPC endpoint for S3"
+}
+
+variable "route_table_id" {
+  description = "ID de la tabla de rutas para el endpoint S3"
+  type        = string
+}
+
+output "vpc_id" {
+  value = aws_vpc.main.id
+}
+
+output "dmz_subnet_ids" {
+  value = aws_subnet.dmz[*].id
+}
+
+output "dmz_subnet_id" {
+  value = aws_subnet.dmz[0].id
+}
+
+output "private_ec2_subnet_ids" {
+  value = aws_subnet.private_ec2[*].id
+}
+
+output "private_rds_subnet_ids" {
+  value = aws_subnet.private_rds[*].id
+}
+
+output "route_table_id" {
+  description = "ID de la tabla de rutas principal"
+  value       = aws_route_table.main.id
 }
