@@ -138,52 +138,52 @@ pipeline {
             }
         }
 
-        stage('Generate Terraform Outputs') {
-            steps {
-                script {
-                    // Nos aseguramos de que existe la carpeta tf_outputs en el root
-                    sh "mkdir -p ${WORKSPACE}/tf_outputs"
-
-                    // Ejecutamos terraform output desde dentro de terraform/environments/ENVIRONMENT,
-                    // pero redirigimos la salida al path correcto en el root del workspace:
-                    sh """
-                    cd terraform/environments/${params.ENVIRONMENT}
-                    touch tf_outputs_${params.ENVIRONMENT}.json
-                    terraform output -json > ${WORKSPACE}/tf_outputs/tf_outputs_${params.ENVIRONMENT}.json
-                    """
-                }
-            }
-        }
-
-
-        stage('Configure Ansible Inventory') {
-            steps {
-                script {
-                    // Leer los outputs de Terraform
-                    def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
-                    def ipsList  = tfOutputs.ec2_instances.value
-                    def bastionIp = tfOutputs.bastion_public_ip.value
-
-                    // Construir lista de hosts sin usar métodos prohibidos
-                    def hosts = ""
-                    for (ip in ipsList) {
-                        hosts += ip + "\n"
-                    }
-
-                    // Escribir el inventario
-                    writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", text: """
-        [webservers]
-        ${hosts}
-        [webservers:vars]
-        ansible_user=ubuntu
-        ansible_ssh_private_key_file=../modules/ec2/.ssh/${params.ENVIRONMENT}-wp-key.pem
-        ansible_ssh_common_args='-o ProxyJump=ubuntu@${bastionIp}'
-        db_host=${tfOutputs.rds_endpoint.value}
-        elb_dns=${tfOutputs.elb_dns_name.value}
-        """
-                }
-            }
-        }
+//        stage('Generate Terraform Outputs') {
+//            steps {
+//                script {
+//                    // Nos aseguramos de que existe la carpeta tf_outputs en el root
+//                    sh "mkdir -p ${WORKSPACE}/tf_outputs"
+//
+                    //// Ejecutamos terraform output desde dentro de terraform/environments/ENVIRONMENT,
+//                    // pero redirigimos la salida al path correcto en el root del workspace:
+//                    sh """
+//                    cd terraform/environments/${params.ENVIRONMENT}
+//                    touch tf_outputs_${params.ENVIRONMENT}.json
+                    //terraform output -json > ${WORKSPACE}/tf_outputs/tf_outputs_${params.ENVIRONMENT}.json
+//                    """
+//                }
+//            }
+//        }
+//
+//
+//        stage('Configure Ansible Inventory') {
+//            steps {
+//                script {
+//                    // Leer los outputs de Terraform
+                    //def tfOutputs = readJSON file: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
+//                    def ipsList  = tfOutputs.ec2_instances.value
+//                    def bastionIp = tfOutputs.bastion_public_ip.value
+//
+//                    // Construir lista de hosts sin usar métodos prohibidos
+//                    def hosts = ""
+//                    for (ip in ipsList) {
+//                        hosts += ip + "\n"
+//                    }
+//
+//                    // Escribir el inventario
+                    //writeFile file: "${env.ANSIBLE_DIR}/inventories/${params.ENVIRONMENT}/hosts", text: """
+//        [webservers]
+//        ${hosts}
+//        [webservers:vars]
+//        ansible_user=ubuntu
+//        ansible_ssh_private_key_file=../modules/ec2/.ssh/${params.ENVIRONMENT}-wp-key.pem
+//        ansible_ssh_common_args='-o ProxyJump=ubuntu@${bastionIp}'
+//        db_host=${tfOutputs.rds_endpoint.value}
+//        elb_dns=${tfOutputs.elb_dns_name.value}
+//        """
+//                }
+//            }
+//        }
 
 //        stage('Update Configuration Files') {
 //            steps {
@@ -325,10 +325,10 @@ pipeline {
 
 
     post {
-        always {
-            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
-            cleanWs()
-        }
+//        always {
+//            archiveArtifacts artifacts: "tf_outputs/tf_outputs_${params.ENVIRONMENT}.json"
+//            cleanWs()
+//        }
         failure {
             script {
                 slackSend channel: '#infra-alerts',

@@ -18,7 +18,7 @@ provider "aws" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  environment               = "prod"
+  environment               = "dev"
   vpc_cidr                  = "10.0.0.0/16"
   dmz_subnet_cidr           = ["10.0.0.0/24", "10.0.1.0/24", "10.0.2.0/24"]
   private_ec2_subnet_cidr   = ["10.0.3.0/24", "10.0.4.0/24", "10.0.5.0/24"]
@@ -29,7 +29,7 @@ module "vpc" {
 module "ec2" {
   source = "../../modules/ec2"
 
-  environment        = "prod"
+  environment        = "dev"
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.vpc.private_ec2_subnet_ids
   dmz_subnet_id      = module.vpc.dmz_subnet_id
@@ -46,16 +46,30 @@ module "ec2" {
 module "rds" {
   source = "../../modules/rds"
 
-  environment           = "prod"
+  environment           = "dev"
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.private_rds_subnet_ids
-  db_username           = "admin_prod"
+  db_username           = "admin_dev"
   db_password           = "Root1234$"
-  instance_class        = "db.m5d.large"
-  allocated_storage     = "400"
+  instance_class        = "db.t3.micro"
+  allocated_storage     = "20"
   multi_az              = false
   ec2_security_group_id = module.ec2.ec2_security_group_id
 }
+
+#module "rds" {
+#  source = "../../modules/rds"
+#
+#  environment           = "dev"
+#  vpc_id                = module.vpc.vpc_id
+#  private_subnet_ids    = module.vpc.private_rds_subnet_ids
+#  db_username           = "admin_dev"
+#  db_password           = "Root1234$"
+#  instance_class        = "db.m5d.large"
+#  allocated_storage     = "400"
+#  multi_az              = false
+#  ec2_security_group_id = module.ec2.ec2_security_group_id
+#}
 
 # module "cert" {
 #  source = "../../modules/cert"
@@ -64,14 +78,14 @@ module "rds" {
 #
 #    tags = {
 #      Project = "eCommerce"
-#      Env     = "prod"
+#      Env     = "dev"
 #   }
 # }
 
 module "elb" {
   source = "../../modules/elb"
   
-  environment         = "prod"
+  environment         = "dev"
   vpc_id              = module.vpc.vpc_id
   public_subnet_ids   = module.vpc.dmz_subnet_ids
   #certificate_arn     = module.cert.certificate_arn
@@ -80,7 +94,7 @@ module "elb" {
 module "s3" {
   source = "../../modules/s3"
 
-  environment      = "prod"
+  environment      = "dev"
   bucket_name      = "static-files-backup"
   vpc_id           = module.vpc.vpc_id
   route_table_id  = module.vpc.route_table_id
