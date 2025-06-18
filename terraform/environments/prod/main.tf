@@ -43,19 +43,19 @@ module "ec2" {
   vpc_cidr             = module.vpc.vpc_cidr 
 }
 
-module "rds" {
-  source = "../../modules/rds"
+#module "rds" {
+#  source = "../../modules/rds"
 
-  environment           = "dev"
-  vpc_id                = module.vpc.vpc_id
-  private_subnet_ids    = module.vpc.private_rds_subnet_ids
-  db_username           = "admin_dev"
-  db_password           = "Root1234$"
-  instance_class        = "db.t3.micro"
-  allocated_storage     = "400"
-  multi_az              = false
-  ec2_security_group_id = module.ec2.ec2_security_group_id
-}
+#  environment           = "dev"
+#  vpc_id                = module.vpc.vpc_id
+#  private_subnet_ids    = module.vpc.private_rds_subnet_ids
+#  db_username           = "admin_dev"
+#  db_password           = "Root1234$"
+#  instance_class        = "db.t3.micro"
+#  allocated_storage     = "400"
+#  multi_az              = false
+#  ec2_security_group_id = module.ec2.ec2_security_group_id
+#}
 
 #module "rds" {
 #  source = "../../modules/rds"
